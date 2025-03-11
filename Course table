@@ -1,0 +1,248 @@
+Course table
+id  - will be copied from csv file which is string
+name, string
+owner_id, will be used user.id as reference
+creator_id, will be used user.id as reference
+modifier_id, will be used user.id as reference
+created_at, timestamps
+updated_at, timestamps
+last_activity_time, datetime field
+currency, string
+exchange_rate, float
+layout_id, string
+tag, string
+user_modified_time, datetime field
+system_modified_time, datetime field
+user_related_activity_time, datetime field
+system_related_activity_time, datetime field
+record_approval_status, string
+is_record_duplicate, boolean
+course_image, string
+course_weblink, string
+level_of_course, string
+course_code, string
+course_duration, string
+institution_id, integer reference to institution table
+title, string
+application_fee, float
+tuition_fee_international, float
+tuition_fee_local, float
+intake, string
+delivery_method, string
+department, string
+internship_period, string
+record_status, string
+current_status, string
+locked, boolean
+delete_record, boolean
+
+
+User table
+email_opt_out, boolean
+id, integer
+email, string
+password, string
+
+Institution
+id, 
+name, string
+
+CourseRequirement table  
+id, integer
+course_id, integer reference to course table
+selt_waived_off, boolean
+type_of_ielts_required, string
+weightage_class_10, float
+weightage_class_12, float
+
+pte_reading, 
+pte_writing, 
+pte_overall
+pte_speaking
+pte_listening
+
+toefl_reading
+toefl_writing
+toefl_overall,
+toefl_speaking
+toefl_listening
+
+ielts_reading
+ielts_writing
+ielts_overall
+ielts_speaking
+ielts_listening
+
+
+year12_eng_telangana
+year12_eng_gujarat
+year12_eng_karnataka
+year12_eng_tamil_nadu
+year12_eng_punjab
+year12_eng_cbse_isc
+year12_eng_haryana
+year12_eng_nios
+year12_eng_maharashtra
+year12_eng_andhra_pradesh
+year12_eng_west_bengal
+year12_eng_ib
+year12_eng_other_boards
+
+class_12_cbse_isc_overall  
+class_12_state_boards_overall  
+class_12_nios_overall  
+class_12_ib_overall  
+class_12_physics_requirement  
+class_12_ib_chemistry_req  
+class_12_gce_physics_req  
+class_12_gce_math_req  
+class_10_indian_overall  
+class_12_ib_physics_req  
+class_12_ib_math_req  
+class_10_gcse_overall  
+class_12_indian_chemistry_req  
+class_10_indian_math_req  
+class_12_gce_chemistry_req  
+class_12_indian_math_req  
+class_12_gce_overall  
+class_12_ib_biology_req  
+class_12_gce_biology_req  
+class_12_indian_biology_req  
+class_10_gcse_math_req  
+class_10_gcse_english_req  
+class_12_chhattisgarh_english  
+class_12_madhya_pradesh_english  
+class_12_jammu_kashmir  
+class_12_kerala_english  
+class_12_rajasthan_english  
+ 
+
+gmat_score  
+gre_score  
+sat_score  
+grad_score_required_3yrs_tier1  
+grad_score_required_3yrs_tier2  
+grad_score_required_3yrs_tier3  
+gap_after_degree_years 
+previous_academic_grades  
+entrance_exam_score  
+all_rounder_capabilities  
+grad_score_required_4yrs_tier2  
+grad_score_required_4yrs_tier1  
+grad_score_required_4yrs_tier3  
+weightage_grad_score  
+ 
+num_backlogs_accepted  
+min_work_experience_years  
+initial_fee_visa_letter  
+lateral_entry_possible  
+agent_appointment_allowed  
+cv_mandatory  
+lor_mandatory  
+sop_mandatory  
+interview_mandatory  
+sealed_transcript_mandatory  
+attested_docs_mandatory  
+change_of_agent_allowed  
+color_scan_mandatory  
+international_students_allowed  
+previous_degree_subject  
+similar_subjects_tags  
+unsubscribed_mode  
+unsubscribed_time  
+gap_after_class_12_years  
+doubts_or_observations  
+grad_validity_moi_months  
+moi_restricted_states  
+moi_tier1_accepted  
+moi_tier2_accepted  
+moi_tier3_accepted  
+moi_any_university_accepted  
+work_experience_factor  
+fee_currency  
+admission_process_notes   
+
+
+
+
+Remarks table
+id
+user_id
+course_id
+remarks_course_desc 
+remarks_selt 
+remarks_entry_req 
+
+
+
+
+
+
+SEED DATA:
+1. 
+EducationBoards Table (Stores different boards like CBSE, ISC, IB, State Boards, etc.)
+id (Primary Key)
+board_name (String) (e.g., "CBSE", "ICSE", "IB", "GCE", "State Board")
+created_at, updated_at
+
+
+["CBSE", "ICSE", "IB", "GCE", "NIOS", "TELANGANA BOARD", "Gujarat BOARD", "Karnataka BOARD", "Tamil Nadu Board", "Punjab State Board", "Haryana Board", "Maharashtra Board", "Andhra Pradesh Board", "West Bengal Board", "other State Board", "Chhattisgarh Board", "Madhya Pradesh Board","Jammu and Kashmir Board","Kerala Board", "Rajasthan Board"].each do |board_name|
+	board = EducationBoards.create(board_name: name)
+	# Create AcademicLevels 
+	["Class 10", "Class 12"].each do |name|
+		academic_level = AcademicLevel.create(level_name: name, board: board)
+		["English", "Physics","Chemistry", "Mathematics","Biology"].each do |subject_name|
+			Subject.create(name: subject_name, academic_level: academic_level, education_board: education_board)
+		end
+	end
+end
+
+
+2. 
+AcademicLevels Table (Stores education levels like Class 10, Class 12, etc.)
+id (Primary Key)
+level_name (String) (e.g., "Class 10", "Class 12")
+board_id belongs_to board
+created_at, updated_at
+
+
+3. Subject Table
+belongs_to academic_level
+belongs_to education_board
+
+academic_level_id integer
+education_board_id integer
+name string  [english, physics, chemistry]
+
+4.
+StandardizedTests Table (For GMAT, GRE, SAT, IELTS, TOEFL, PTE, etc.)
+id (Primary Key)
+test_name (String) (e.g., "GMAT", "GRE", "SAT", "IELTS", "TOEFL", "PTE")
+created_at, updated_at
+course_id
+exam_type (integer enum) (e.g., "Overall", "Reading", "Writing", "Speaking", "Listening")
+
+["GMAT", "GRE", "SAT", "IELTS", "TOEFL", "PTE"].each do |test_name|
+	["Overall", "Reading", "Writing", "Speaking", "Listening"].each do |exam_type|
+		StandardizedTest.create(test_name: test_name, exam_type: exam_type)
+	end
+end
+
+
+5.
+CourseTestRequirements Table (Stores required standardized test scores for each course)
+id (Primary Key)
+course_id (Foreign Key to Courses)
+test_id (Foreign Key to StandardizedTests)
+min_score (Float)
+created_at, updated_at
+
+6. CourseSubjectRequirements table (Stores required subject score for each subject and course)
+id (Primary Key)
+course_id (Foreign Key to Courses)
+subject_id (Foreign Key to Subject)
+min_score (Float)
+created_at, updated_at
+
+
+

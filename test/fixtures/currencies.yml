@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  currency_code: MyString
+  exchange_rate: 9.99
+
+two:
+  currency_code: MyString
+  exchange_rate: 9.99
