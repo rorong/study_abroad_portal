@@ -7,10 +7,13 @@ default: &default
   password: <%= ENV.fetch("DATABASE_PASSWORD", "postgres") %>
   port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
   url: <%= ENV["DATABASE_URL"] %>
+  prepared_statements: false
+  statement_limit: 1000
+  cache: true
 
 development:
   <<: *default
-  database: study_aboard_dev
+  database: study_abroad_dev
 
 test:
   <<: *default
@@ -19,3 +22,7 @@ test:
 production:
   <<: *default
   database: study_abroad_portal_production
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 10 } %>
+  prepared_statements: true
+  statement_limit: 5000
+  cache: true
