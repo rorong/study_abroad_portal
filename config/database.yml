@@ -17,4 +17,4 @@ test:
 
 production:
   <<: *default
-  database: study_abroad_portal_production
+  url: <%= ENV.fetch("DATABASE_URL") %>
