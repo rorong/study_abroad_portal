@@ -14,7 +14,7 @@
         <div class="card-body">
           <h3 class="text-center mb-4">Sign In</h3>
 
-          <%= form_with url: session_path, html: { class: "needs-validation" } do |form| %>
+          <%= form_with url: session_path, html: { class: "needs-validation", data: { turbo: false } } do |form| %>
             <div class="mb-3">
               <%= form.label :email_address, "Email Address", class: "form-label" %>
               <%= form.email_field :email_address, class: "form-control", required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address] %>
