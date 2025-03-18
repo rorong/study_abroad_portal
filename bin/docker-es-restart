@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Run systemctl command on the host machine
+docker run --rm \
+  --privileged \
+  -v /run/systemd/system:/run/systemd/system \
+  -v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
+  -v /sys/fs/cgroup:/sys/fs/cgroup \
+  ubuntu:latest \
+  systemctl restart elasticsearch 

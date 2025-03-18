@@ -4,13 +4,42 @@ set -e
 # Remove a potentially pre-existing server.pid for Rails
 rm -f /rails/tmp/pids/server.pid
 
-# Wait for PostgreSQL to be ready
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_USER -c '\q' 2>/dev/null; do
-  echo "Postgres is unavailable - sleeping"
-  sleep 1
-done
+# Check if we're running in production
+if [ "$RAILS_ENV" = "production" ]; then
+  # Wait for PostgreSQL using connection URL
+  until pg_isready -h postgres -p 5432; do
+    echo "Postgres is unavailable - sleeping"
+    sleep 2
+  done
 
-echo "Postgres is up - executing command"
+  # Wait for local Elasticsearch
+  until curl -s "http://host.docker.internal:9200" >/dev/null; do
+    echo "Local Elasticsearch is unavailable - sleeping"
+    sleep 2
+  done
+
+  echo "All services are up - running setup tasks"
+  
+  # Database setup and migrations
+  if [ -f ./bin/rails ]; then
+    echo "Creating database if it doesn't exist..."
+    bundle exec rails db:create 2>/dev/null || true
+    
+    echo "Running database migrations..."
+    bundle exec rails db:migrate
+    
+    # Check if assets need to be precompiled
+    if [ ! -d public/assets ] || [ ! -d public/packs ]; then
+      echo "Precompiling assets..."
+      bundle exec rails assets:precompile
+    fi
+  fi
+else
+  # Development setup
+  bundle install
+  yarn install
+  bundle exec rails db:prepare
+fi
 
 # Then exec the container's main process
 exec "$@" 

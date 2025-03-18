@@ -9,12 +9,14 @@ default: &default
 
 development:
   <<: *default
-  database: study_abroad_dev
+  database: study_aboard_dev
 
 test:
   <<: *default
   database: study_abroad_portal_test
 
 production:
-  <<: *default
-  database: study_abroad_portal_production
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  url: <%= ENV['DATABASE_URL'] %>

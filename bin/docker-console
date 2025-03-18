@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Start Rails console in the running container
+docker exec -it rails_app bundle exec rails console 

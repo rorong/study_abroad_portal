@@ -17,12 +17,16 @@ module StudyAbroadPortal
     config.autoload_lib(ignore: %w[assets tasks])
     config.cache_store = :memory_store
     # Configuration for the application, engines, and railties goes here.
-    config.active_support.cache_format_version = 6.1
+    # config.active_support.cache_format_version = 7.0
 
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    config.public_file_server.enabled = true
+    config.assets.compile = true
+    config.assets.digest = true
   end
 end

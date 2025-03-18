@@ -24,7 +24,9 @@ class CoursesController < ApplicationController
     @courses = @courses.joins(:tags).where(tags: { id: filtered_params[:tag_id] }) if filtered_params[:tag_id].present?
     @courses = @courses.where(course_duration: filtered_params[:course_duration]) if filtered_params[:course_duration].present?
     @courses = @courses.where(education_board_id: filtered_params[:education_board_id]) if filtered_params[:education_board_id].present?
-
+    @courses = @courses.where(level_of_course: filtered_params[:level_of_course]) if filtered_params[:level_of_course].present?
+    @courses = @courses.where(internship_period: filtered_params[:internship_period]) if filtered_params[:internship_period].present?
+    @courses = @courses.where(application_fee: filtered_params[:application_fee]) if filtered_params[:application_fee].present? 
     if filtered_params[:min_tuition_fee].present? || filtered_params[:max_tuition_fee].present?
       min_fee = filtered_params[:min_tuition_fee].present? ? filtered_params[:min_tuition_fee].to_f : 0
       max_fee = filtered_params[:max_tuition_fee].present? ? filtered_params[:max_tuition_fee].to_f : Float::INFINITY
@@ -38,6 +40,13 @@ class CoursesController < ApplicationController
     respond_to do |format|
       format.html
       format.turbo_stream
+    end
+  end
+
+  def search
+    @courses = Course.where("name LIKE ?", "%#{params[:query]}%").pluck(:id, :name)
+    respond_to do |format|
+      format.json { render json: { courses: @courses } }
     end
   end
 end
