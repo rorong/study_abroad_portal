@@ -1,16 +1,6 @@
-require 'elasticsearch'
-
-config = {
-  url: ENV.fetch('ELASTICSEARCH_URL', 'http://elasticsearch:9200'),
-  transport_options: {
-    request: {
-      timeout: 5
-    }
-  }
-}
-
-if File.exist?('config/elasticsearch.yml')
-  config.merge!(YAML.load_file('config/elasticsearch.yml')[Rails.env].symbolize_keys)
-end
-
-Elasticsearch::Model.client = Elasticsearch::Client.new(config)
+Elasticsearch::Model.client = Elasticsearch::Client.new(
+  url: ENV.fetch("ELASTICSEARCH_URL", "http://localhost:9200"),
+  api_key: ENV.fetch("ELASTICSEARCH_API_KEY"),
+  transport_options: { ssl: { verify: false } },
+  log: true
+)
