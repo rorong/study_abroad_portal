@@ -1,8 +1,8 @@
-class CreateRemarks < ActiveRecord::Migration[7.0]
+class CreateRemarks < ActiveRecord::Migration[8.0]
   def change
     create_table :remarks do |t|
-      t.references :user, type: :string, foreign_key: true, index: true
-      t.references :course, foreign_key: true, index: true
+      t.references :user, null: false, foreign_key: true, index: true  # ✅ Corrected
+      t.references :course, null: false, foreign_key: true, index: true
       t.text :remarks_course_desc
       t.text :remarks_selt
       t.text :remarks_entry_req

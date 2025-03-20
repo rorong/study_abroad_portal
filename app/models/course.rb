@@ -1,7 +1,8 @@
 class Course < ApplicationRecord
   include Elasticsearch::Model
   include Elasticsearch::Model::Callbacks
-
+  has_many :course_universities, dependent: :destroy
+  has_many :universities, through: :course_universities
   # Relationships
   belongs_to :owner, class_name: 'User'
   belongs_to :creator, class_name: 'User'
