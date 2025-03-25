@@ -1,114 +1,31 @@
 <div class=" mt-5" style="margin: 1%; padding: 3%;">
-  <%= form_with url: courses_path, method: :get, local: false, data: { controller: "search", turbo_frame: "courses_list" }, class: "mb-4" do |f| %>
-    <div class="row g-3">
-      <div class="col-md-4">
-        <%= f.label :query, "Search Courses", class: "form-label" %>
-        <%= f.text_field :query, 
-          class: "form-control",
-          placeholder: "Search courses...",
-          data: { 
-            search_target: "input",
-            action: "input->search#search"
-          } %>
-        
-        <div data-search-target="queryResults" class="d-none">
-          <div data-search-target="resultsContainer" class="search-results-container overflow-auto" style="max-height: 200px"></div>
-        </div>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :institution_id, "Institution", class: "form-label" %>
-        <%= f.select :institution_id, options_from_collection_for_select(institutions, :id, :name, params[:institution_id]), 
-          { include_blank: "Institution" }, class: "form-select form-select-lg py-3", data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :department_id, "Department", class: "form-label" %>
-        <%= f.select :department_id, options_from_collection_for_select(departments, :id, :name, params[:department_id]), 
-          { include_blank: "Department" }, class: "form-select form-select-lg py-3", data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :intake, "Intake", class: "form-label" %>
-        <%= f.select :intake,
-          options_for_select(
-            @courses.pluck(:intake)
-                   .compact
-                   .tally
-                   .map { |intake, count| ["#{intake} (#{count})", intake] },
-            selected: params[:intake]
-          ),
-          { include_blank: "Intake" },
-          class: "form-select form-select-lg py-3",
-          data: { action: "change->search#search" }
-        %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :current_status, "Status", class: "form-label" %>
-        <%= f.select :current_status, options_for_select(statuses, selected: params[:current_status]), 
-          { include_blank: "Status" }, class: "form-select form-select-lg py-3", data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :delivery_method, "Delivery Method", class: "form-label" %>
-        <%= f.select :delivery_method, options_for_select(delivery_methods, selected: params[:delivery_method]), 
-          { include_blank: "Delivery Method" }, class: "form-select form-select-lg py-3", data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :course_duration, "Duration", class: "form-label" %>
-        <%= f.select :course_duration, 
-            options_for_select(Course.pluck(:course_duration).uniq, selected: params[:course_duration]), 
-            { include_blank: "Duration" }, 
-            class: "form-control form-control-lg py-3", 
-            data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= label_tag :tag_id, "Tag", class: "form-label" %>
-        <%= select_tag :tag_id, 
-          options_from_collection_for_select(tags, :id, :tag_name, params[:tag_id]), 
-          { include_blank: 'Tag', class: "form-select form-select-lg py-3", data: { action: "change->search#search" } } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :education_board_id, "Academic Board", class: "form-label" %>
-        <%= f.select :education_board_id, options_from_collection_for_select(EducationBoard.all, :id, :board_name, params[:education_board_id]), 
-          { include_blank: "Academic Board" }, class: "form-select form-select-lg py-3", data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :min_tuition_fee, "Min Tuition Fee", class: "form-label" %>
-        <%= f.number_field :min_tuition_fee, placeholder: "Min Tuition Fee", 
-          class: "form-control form-control-lg py-3", data: { action: "input->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :max_tuition_fee, "Max Tuition Fee", class: "form-label" %>
-        <%= f.number_field :max_tuition_fee, placeholder: "Max Tuition Fee", 
-          class: "form-control form-control-lg py-3", data: { action: "input->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :level_of_course, "Level of Course", class: "form-label" %>
-        <%= f.select :level_of_course, 
-            options_for_select(Course.pluck(:level_of_course).uniq.compact.sort, selected: params[:level_of_course]), 
-            { include_blank: "Level of Course" }, 
-            class: "form-select form-select-lg py-3", 
-            data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :internship_period, "Internship Period", class: "form-label" %>
-        <%= f.select :internship_period, 
-            options_for_select(Course.pluck(:internship_period).uniq.compact.sort, selected: params[:internship_period]), 
-            { include_blank: "Internship Period" }, 
-            class: "form-select form-select-lg py-3", 
-            data: { action: "change->search#search" } %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :application_fee, "Application Fee", class: "form-label" %>
-        <%= f.select :application_fee, 
-            options_for_select(Course.pluck(:application_fee).uniq.compact.sort, selected: params[:application_fee]), 
-            { include_blank: "Application Fee" }, 
-            class: "form-select form-select-lg py-3", 
-            data: { action: "change->search#search" } %>
-      </div>
-    </div>
-  <% end %>
-
+<turbo-frame id="filter_form">
+<%= render "filter_form", 
+      available_institutions: @available_institutions,
+      available_departments: @available_departments, 
+      available_universities: @available_universities,
+      available_intakes: @available_intakes,
+      available_statuses: @available_statuses,
+      available_delivery_methods: @available_delivery_methods,
+      available_durations: @available_durations,
+      available_tags: @available_tags,
+      available_education_boards: @available_education_boards,
+      available_levels: @available_levels,
+      available_internship_periods: @available_internship_periods,
+      available_application_fees: @available_application_fees,
+      courses: @courses,
+      params: params %>
+</turbo-frame>
   <div class="mt-4">
     <turbo-frame id="courses_list">
-      <%= render "courses_list", courses: @courses, subjects: @subjects, tests: @tests %>
+      <%= render "courses_list", 
+          courses: @courses, 
+          subjects: @subjects, 
+          tests: @tests,
+          institutions: @available_institutions,
+          departments: @available_departments,
+          tags: @available_tags,
+          universities: @available_universities %>
     </turbo-frame>
   </div>
 </div>
@@ -117,11 +34,27 @@
     position: absolute;
     background: white;
     width: 100%;
-    z-index: 1050; /* Higher than other elements */
+    z-index: 1050;
     border: 1px solid #ccc;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   }
   .col-md-4 {
     position: relative;
   }
+  .clear-search {
+    display: none;
+    outline: none !important;
+  }
+  .form-control:not(:placeholder-shown) ~ .clear-search {
+    display: block;
+  }
+  .clear-search {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .clear-search:hover {
+    opacity: 1;
+  }
 </style>
+

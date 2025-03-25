@@ -3,9 +3,12 @@ class CreateCourses < ActiveRecord::Migration[8.0]
     create_table :courses do |t|
       t.string :record_id
       t.string :name
-      t.references :owner, type: :string, foreign_key: { to_table: :users }
-      t.references :creator, type: :string, foreign_key: { to_table: :users }
-      t.references :modifier, type: :string, foreign_key: { to_table: :users }
+      t.references :owner, null: false, foreign_key: { to_table: :users }, index: true  # ✅ Corrected
+      t.references :creator, null: false, foreign_key: { to_table: :users }, index: true  # ✅ Corrected
+      t.references :modifier, null: false, foreign_key: { to_table: :users }, index: true  # ✅ Corrected
+      t.references :institution, null: false, foreign_key: true, index: true  # ✅ Corrected
+      t.references :department, foreign_key: true, index: true
+
       t.datetime :last_activity_time
       t.string :layout_id
       t.datetime :user_modified_time
@@ -19,15 +22,12 @@ class CreateCourses < ActiveRecord::Migration[8.0]
       t.string :level_of_course
       t.string :course_code
       t.string :course_duration
-      t.references :institution, type: :string, foreign_key: true, index: true
-      t.references :department, foreign_key: true, index: true
       t.string :title
       t.float :application_fee
       t.float :tuition_fee_international
       t.float :tuition_fee_local
       t.string :intake
       t.string :delivery_method
-      t.string :department
       t.string :internship_period
       t.string :record_status
       t.string :current_status
@@ -44,4 +44,4 @@ class CreateCourses < ActiveRecord::Migration[8.0]
     add_index :courses, :course_code
     add_index :courses, :name
   end
-end 
+end

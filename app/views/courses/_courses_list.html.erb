@@ -1,18 +1,59 @@
+<%# Cache the commonly used values %>
+<% query_params = request.query_parameters %>
+<% course_count = @course_count || 0 %>
+
 <div data-controller="search">
-  <% selected_filters = {} %>
-  <% selected_filters[:institution_id] = institutions.find { |i| i.id.to_s == params[:institution_id] }&.name if params[:institution_id].present? %>
-  <% selected_filters[:department_id] = departments.find { |d| d.id.to_s == params[:department_id] }&.name if params[:department_id].present? %>
-  <% selected_filters[:intake] = params[:intake] if params[:intake].present? %>
-  <% selected_filters[:current_status] = params[:current_status] if params[:current_status].present? %>
-  <% selected_filters[:delivery_method] = params[:delivery_method] if params[:delivery_method].present? %>
-  <% selected_filters[:course_duration] = "#{params[:course_duration]} months" if params[:course_duration].present? %>
-  <% selected_filters[:level_of_course] = params[:level_of_course] if params[:level_of_course].present? %>
-  <% selected_filters[:internship_period] = params[:internship_period] if params[:internship_period].present? %>
-  <% selected_filters[:application_fee] = "$#{params[:application_fee]}" if params[:application_fee].present? %>
-  <% selected_filters[:tag_id] = tags.find { |t| t.id.to_s == params[:tag_id] }&.tag_name if params[:tag_id].present? %>
-  <% selected_filters[:education_board_id] = EducationBoard.find(params[:education_board_id]).board_name if params[:education_board_id].present? %>
-  <% selected_filters[:min_tuition_fee] = "Min: $#{params[:min_tuition_fee]}" if params[:min_tuition_fee].present? %>
-  <% selected_filters[:max_tuition_fee] = "Max: $#{params[:max_tuition_fee]}" if params[:max_tuition_fee].present? %>
+  <%# Optimize filter processing by caching the lookups %>
+<% selected_filters = {}.tap do |filters|
+    if params[:institution_id].present?
+      filters[:institution_id] = institutions.find { |i| i.id.to_s == params[:institution_id] }&.name
+    end
+    if params[:department_id].present?
+      filters[:department_id] = departments.find { |d| d.id.to_s == params[:department_id] }&.name
+    end
+    filters[:intake] = params[:intake] if params[:intake].present?
+    filters[:current_status] = params[:current_status] if params[:current_status].present?
+    filters[:delivery_method] = params[:delivery_method] if params[:delivery_method].present?
+    filters[:course_duration] = "#{params[:course_duration]} months" if params[:course_duration].present?
+    filters[:level_of_course] = params[:level_of_course] if params[:level_of_course].present?
+    filters[:internship_period] = params[:internship_period] if params[:internship_period].present?
+    filters[:application_fee] = "$#{params[:application_fee]}" if params[:application_fee].present?
+    if params[:tag_id].present?
+      filters[:tag_id] = tags.find { |t| t.id.to_s == params[:tag_id] }&.tag_name
+    end
+    if params[:education_board_id].present?
+      filters[:education_board_id] = EducationBoard.find(params[:education_board_id]).board_name
+    end
+    filters[:min_tuition_fee] = "Min: $#{params[:min_tuition_fee]}" if params[:min_tuition_fee].present?
+    filters[:max_tuition_fee] = "Max: $#{params[:max_tuition_fee]}" if params[:max_tuition_fee].present?
+    filters[:university_id] = universities.find { |u| u.id.to_s == params[:university_id] }&.name if params[:university_id].present?
+    
+    # Add new university-related filters
+    filters[:university_country] = params[:university_country] if params[:university_country].present?
+    filters[:university_address] = params[:university_address] if params[:university_address].present?
+    
+    # Add ranking filters
+    if params[:min_world_ranking].present? || params[:max_world_ranking].present?
+      world_rank = []
+      world_rank << "Min: #{params[:min_world_ranking]}" if params[:min_world_ranking].present?
+      world_rank << "Max: #{params[:max_world_ranking]}" if params[:max_world_ranking].present?
+      filters[:world_ranking] = "World Ranking (#{world_rank.join(' - ')})"
+    end
+    
+    if params[:min_qs_ranking].present? || params[:max_qs_ranking].present?
+      qs_rank = []
+      qs_rank << "Min: #{params[:min_qs_ranking]}" if params[:min_qs_ranking].present?
+      qs_rank << "Max: #{params[:max_qs_ranking]}" if params[:max_qs_ranking].present?
+      filters[:qs_ranking] = "QS Ranking (#{qs_rank.join(' - ')})"
+    end
+    
+    if params[:min_national_ranking].present? || params[:max_national_ranking].present?
+      national_rank = []
+      national_rank << "Min: #{params[:min_national_ranking]}" if params[:min_national_ranking].present?
+      national_rank << "Max: #{params[:max_national_ranking]}" if params[:max_national_ranking].present?
+      filters[:national_ranking] = "National Ranking (#{national_rank.join(' - ')})"
+    end
+  end %>
 
   <% if selected_filters.any? %>
     <div class="mb-4 p-3 bg-light rounded shadow-sm">
@@ -21,7 +62,7 @@
         <% selected_filters.each do |key, value| %>
           <span class="badge rounded-pill bg-primary px-3 py-2">
             <%= value %>
-            <%= link_to "X", courses_path(request.query_parameters.except(key)), 
+            <%= link_to "X", courses_path(query_params.except(key)), 
                         class: "text-white ms-2 text-decoration-none fw-bold", 
                         method: :get, 
                         onclick: "window.location.href=this.href; return false;" %>
@@ -29,75 +70,91 @@
         <% end %>
       </div>
       <div class="mt-3">
-        <%= link_to "Clear All", "#", 
+        <%= link_to "Clear All", courses_path, 
                     class: "btn btn-outline-secondary fw-bold px-4", 
-                    onclick: "window.location.reload();" %>
+                    data: { turbo: false } %>
       </div>
     </div>
   <% end %>
-
 
   <div class="mb-3">
     <h5 class="text-dark">
       <% if params[:query].present? %>
         Showing matches for "<span class="text-primary fw-bold"><%= params[:query] %></span>":
       <% end %>
-      <span id="course_count" class="fw-bold"><%= @courses&.count %> Courses found</span>
+      <span id="course_count" class="fw-bold"><%= course_count %> Courses found</span>
     </h5>
   </div>
-  <div class="d-flex justify-content-between align-items-center mb-3">
+
+  <!--<div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="text-dark fw-bold">Courses</h5>
-    <form method="get" action="<%= courses_path %>" class="d-flex align-items-center">
+    <%# Optimize the sorting form %>
+    <%= form_tag courses_path, method: :get, class: "d-flex align-items-center" do %>
       <label class="me-2 fw-bold">Sort by:</label>
-      <select name="sort_by" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-        <option value="">Select</option>
-        <option value="tuition_fee_asc" <%= "selected" if params[:sort_by] == "tuition_fee_asc" %>>Tuition Fee (Low to High)</option>
-        <option value="tuition_fee_desc" <%= "selected" if params[:sort_by] == "tuition_fee_desc" %>>Tuition Fee (High to Low)</option>
-      </select>
-      <%# Retain other filters while sorting %>
-      <% params.except(:sort_by).each do |key, value| %>
-        <input type="hidden" name="<%= key %>" value="<%= value %>">
+      <%= select_tag :sort_by,
+          options_for_select([
+            ["Select", ""],
+            ["Tuition Fee (Low to High)", "tuition_fee_asc"],
+            ["Tuition Fee (High to Low)", "tuition_fee_desc"],
+            ["Application Fee (Low to High)", "application_fee_asc"],
+            ["Application Fee (High to Low)", "application_fee_desc"]
+          ], params[:sort_by]),
+          class: "form-select form-select-sm w-auto",
+          onchange: "this.form.submit()" %>
+      <% query_params.except(:sort_by).each do |key, value| %>
+        <%= hidden_field_tag key, value %>
       <% end %>
-    </form>
-  </div>
+    <% end %>
+  </div>-->
 
   <% if courses.any? %>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       <% courses.each do |course| %>
-        <div class="col">
-          <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
-            <div class="card-header bg-primary text-white">
-              <h5 class="card-title m-0 fw-bold"><%= course.name %></h5>
-            </div>
-            <div class="card-body">
-              <% if course.title.present? %>
-                <p class="card-subtitle text-muted mb-2"><%= course.title %></p>
-              <% end %>
-              <p class="mb-1"><strong>🏫 Institution:</strong> <%= course.institution.name %></p>
-              <p class="mb-1"><strong>📚 Department:</strong> <%= course.department.name %></p>
-              <p class="mb-1"><strong>📌 Level:</strong> <%= course.level_of_course || "N/A" %></p>
-              <p class="mb-1"><strong>⏳ Duration:</strong> <%= course.course_duration %> months</p>
-              <p class="mb-1"><strong>📅 Intake:</strong> <%= course.intake || "N/A" %></p>
-              <p class="mb-1"><strong>🚚 Delivery Method:</strong> <%= course.delivery_method || "N/A" %></p>
-              <% if course.tuition_fee_international.present? %>
-                <p class="mb-1"><strong>💰 Tuition (Intl):</strong> $<%= number_with_delimiter(course.tuition_fee_international) %></p>
-              <% end %>
-              <% if course.application_fee.present? %>
-                <p class="mb-1"><strong>📝 Application Fee:</strong> $<%= course.application_fee %></p>
-              <% end %>
-            </div>
-            <% if course.course_weblink.present? %>
-              <div class="card-footer bg-white border-0 text-center">
-                <a href="#" class="btn btn-outline-warning w-100 fw-bold">
-                  View Course
-                </a>
+        <%# Cache each course card to improve rendering performance %>
+        <% cache course do %>
+          <div class="col">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
+              <div class="card-header bg-primary text-white">
+                <h5 class="card-title m-0 fw-bold"><%= course.name %></h5>
               </div>
-            <% end %>
+              <div class="card-body">
+                <% if course.title.present? %>
+                  <p class="card-subtitle text-muted mb-2"><%= course.title %></p>
+                <% end %>
+                <p class="mb-1"><strong>🏫 Institution:</strong> <%= course.institution.name %></p>
+                <p class="mb-1"><strong>📚 Department:</strong> <%= course.department.name %></p>
+                <p class="mb-1"><strong>📌 Level:</strong> <%= course.level_of_course || "N/A" %></p>
+                <p class="mb-1"><strong>⏳ Duration:</strong> <%= course.course_duration %> months</p>
+                <p class="mb-1"><strong>📅 Intake:</strong> <%= course.intake || "N/A" %></p>
+                <p class="mb-1"><strong>🚚 Delivery Method:</strong> <%= course.delivery_method || "N/A" %></p>
+                <% if course.tuition_fee_international.present? %>
+                  <p class="mb-1"><strong>💰 Tuition (Intl):</strong> $<%= number_with_delimiter(course.tuition_fee_international) %></p>
+                <% end %>
+                <% if course.application_fee.present? %>
+                  <p class="mb-1"><strong>📝 Application Fee:</strong> $<%= course.application_fee %></p>
+                <% end %>
+              </div>
+              <div class="card-footer bg-white border-0 text-center">
+                <%= link_to course_path(course), class: "btn btn-outline-primary w-100 fw-bold", data: { turbo: false } do %>
+                  <i class="fas fa-info-circle me-2"></i>View Details
+                <% end %>
+                <% if course.course_weblink.present? %>
+                  <a href="<%= course.course_weblink %>" target="_blank" class="btn btn-outline-warning w-100 fw-bold mt-2">
+                    <i class="fas fa-external-link-alt me-2"></i>Visit Website
+                  </a>
+                <% end %>
+              </div>
+            </div>
           </div>
-        </div>
+        <% end %>
       <% end %>
     </div>
   <% else %>
     <p class="text-muted text-center">No courses found.</p>
   <% end %>
+
+  <%# Add pagination controls %>
+  <div class="mt-8 flex justify-center">
+    <%= paginate @courses, class: "pagination" %>
+  </div>
 </div>

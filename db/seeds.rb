@@ -12,16 +12,16 @@ EXAM_TYPES = [:overall, :reading, :writing, :speaking, :listening]
 
 # Create Education Boards and related data
 BOARD_NAMES.each do |board_name|
-  board = EducationBoard.create!(board_name: board_name)
+  board = EducationBoard.find_or_create_by!(board_name: board_name)
   
   ["Class 10", "Class 12"].each do |level_name|
-    academic_level = AcademicLevel.create!(
+    academic_level = AcademicLevel.find_or_create_by!(
       level_name: level_name,
       education_board: board
     )
     
     ["English", "Physics", "Chemistry", "Mathematics", "Biology"].each do |subject_name|
-      Subject.create!(
+      Subject.find_or_create_by!(
         name: subject_name,
         academic_level: academic_level,
         education_board: board
