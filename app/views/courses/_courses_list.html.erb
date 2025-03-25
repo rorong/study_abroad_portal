@@ -24,8 +24,15 @@
     if params[:education_board_id].present?
       filters[:education_board_id] = EducationBoard.find(params[:education_board_id]).board_name
     end
-    filters[:min_tuition_fee] = "Min: $#{params[:min_tuition_fee]}" if params[:min_tuition_fee].present?
-    filters[:max_tuition_fee] = "Max: $#{params[:max_tuition_fee]}" if params[:max_tuition_fee].present?
+    
+    # Handle tuition fee range
+    if params[:min_tuition_fee].present? || params[:max_tuition_fee].present?
+      tuition_range = []
+      tuition_range << "Min: $#{params[:min_tuition_fee]}" if params[:min_tuition_fee].present?
+      tuition_range << "Max: $#{params[:max_tuition_fee]}" if params[:max_tuition_fee].present?
+      filters[:tuition_fee] = "Tuition Fee (#{tuition_range.join(' - ')})"
+    end
+    
     filters[:university_id] = universities.find { |u| u.id.to_s == params[:university_id] }&.name if params[:university_id].present?
     
     # Add new university-related filters
@@ -53,6 +60,38 @@
       national_rank << "Max: #{params[:max_national_ranking]}" if params[:max_national_ranking].present?
       filters[:national_ranking] = "National Ranking (#{national_rank.join(' - ')})"
     end
+
+    # Handle course duration range
+    if params[:min_duration].present? || params[:max_duration].present?
+      duration_range = []
+      duration_range << "Min: #{params[:min_duration]} months" if params[:min_duration].present?
+      duration_range << "Max: #{params[:max_duration]} months" if params[:max_duration].present?
+      filters[:duration] = "Duration (#{duration_range.join(' - ')})"
+    end
+
+    # Handle internship period range
+    if params[:min_internship].present? || params[:max_internship].present?
+      internship_range = []
+      internship_range << "Min: #{params[:min_internship]} months" if params[:min_internship].present?
+      internship_range << "Max: #{params[:max_internship]} months" if params[:max_internship].present?
+      filters[:internship] = "Internship Period (#{internship_range.join(' - ')})"
+    end
+
+    # Handle application fee range
+    if params[:min_application_fee].present? || params[:max_application_fee].present?
+      application_fee_range = []
+      application_fee_range << "Min: $#{params[:min_application_fee]}" if params[:min_application_fee].present?
+      application_fee_range << "Max: $#{params[:max_application_fee]}" if params[:max_application_fee].present?
+      filters[:application_fee_range] = "Application Fee (#{application_fee_range.join(' - ')})"
+    end
+
+    # Handle distance range
+    if params[:min_distance].present? || params[:max_distance].present?
+      distance_range = []
+      distance_range << "Min: #{params[:min_distance]} km" if params[:min_distance].present?
+      distance_range << "Max: #{params[:max_distance]} km" if params[:max_distance].present?
+      filters[:distance] = "Distance (#{distance_range.join(' - ')})"
+    end
   end %>
 
   <% if selected_filters.any? %>
@@ -62,10 +101,29 @@
         <% selected_filters.each do |key, value| %>
           <span class="badge rounded-pill bg-primary px-3 py-2">
             <%= value %>
-            <%= link_to "X", courses_path(query_params.except(key)), 
-                        class: "text-white ms-2 text-decoration-none fw-bold", 
-                        method: :get, 
-                        onclick: "window.location.href=this.href; return false;" %>
+            <%# Handle range filters differently %>
+            <% if key.to_s.end_with?('_ranking') || key == :tuition_fee || key == :duration || 
+                  key == :internship || key == :application_fee_range || key == :distance %>
+              <%# Create a new params hash without the range parameters %>
+              <% new_params = query_params.dup %>
+              <% if key == :application_fee_range %>
+                <% new_params.delete(:min_application_fee) %>
+                <% new_params.delete(:max_application_fee) %>
+              <% else %>
+                <% base_key = key.to_s.gsub(/_range$/, '') %>
+                <% new_params.delete("min_#{base_key}".to_sym) %>
+                <% new_params.delete("max_#{base_key}".to_sym) %>
+              <% end %>
+              <%= link_to "X", courses_path(new_params), 
+                          class: "text-white ms-2 text-decoration-none fw-bold", 
+                          method: :get, 
+                          onclick: "window.location.href=this.href; return false;" %>
+            <% else %>
+              <%= link_to "X", courses_path(query_params.except(key)), 
+                          class: "text-white ms-2 text-decoration-none fw-bold", 
+                          method: :get, 
+                          onclick: "window.location.href=this.href; return false;" %>
+            <% end %>
           </span>
         <% end %>
       </div>
