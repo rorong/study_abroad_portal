@@ -25,11 +25,26 @@ class CoursesController < ApplicationController
     @courses = @courses.where(institution_id: filtered_params[:institution_id]) if filtered_params[:institution_id].present?
     @courses = @courses.where(department_id: filtered_params[:department_id]) if filtered_params[:department_id].present?
     @courses = @courses.joins(:tags).where(tags: { id: filtered_params[:tag_id] }) if filtered_params[:tag_id].present?
-    @courses = @courses.where(course_duration: filtered_params[:course_duration]) if filtered_params[:course_duration].present?
+    # Handle course duration range
+    if filtered_params[:min_duration].present? || filtered_params[:max_duration].present?
+      min_duration = filtered_params[:min_duration].present? ? filtered_params[:min_duration].to_i : 0
+      max_duration = filtered_params[:max_duration].present? ? filtered_params[:max_duration].to_i : Float::INFINITY
+      @courses = @courses.where(course_duration: min_duration..max_duration)
+    end
     @courses = @courses.where(education_board_id: filtered_params[:education_board_id]) if filtered_params[:education_board_id].present?
-    @courses = @courses.where(level_of_course: filtered_params[:level_of_course]) if filtered_params[:level_of_course].present?
-    @courses = @courses.where(internship_period: filtered_params[:internship_period]) if filtered_params[:internship_period].present?
-    @courses = @courses.where(application_fee: filtered_params[:application_fee]) if filtered_params[:application_fee].present? 
+    @courses = @courses.where(level_of_course: filtered_params[:level_of_course]) if filtered_params[:level_of_course].present? 
+    # Handle internship period range
+    if filtered_params[:min_internship].present? || filtered_params[:max_internship].present?
+      min_internship = filtered_params[:min_internship].present? ? filtered_params[:min_internship].to_i : 0
+      max_internship = filtered_params[:max_internship].present? ? filtered_params[:max_internship].to_i : Float::INFINITY
+      @courses = @courses.where(internship_period: min_internship..max_internship)
+    end
+    # Handle application fee range
+    if filtered_params[:min_application_fee].present? || filtered_params[:max_application_fee].present?
+      min_fee = filtered_params[:min_application_fee].present? ? filtered_params[:min_application_fee].to_f : 0
+      max_fee = filtered_params[:max_application_fee].present? ? filtered_params[:max_application_fee].to_f : Float::INFINITY
+      @courses = @courses.where(application_fee: min_fee..max_fee)
+    end
     @courses = @courses.joins(:universities).where(universities: { id: filtered_params[:university_id] }) if filtered_params[:university_id].present?
     @courses = @courses.joins(:universities).where(universities: { country: filtered_params[:university_country] }) if filtered_params[:university_country].present?
     @courses = @courses.joins(:universities).where('universities.address LIKE ?', "%#{filtered_params[:university_address]}%") if filtered_params[:university_address].present?
@@ -96,7 +111,6 @@ class CoursesController < ApplicationController
     @available_delivery_methods = filtered_courses.distinct.pluck(:delivery_method).compact
     @available_durations = filtered_courses.distinct.pluck(:course_duration).compact
     @available_levels = filtered_courses.distinct.pluck(:level_of_course).compact
-    @available_internship_periods = filtered_courses.distinct.pluck(:internship_period).compact
     @available_application_fees = filtered_courses.distinct.pluck(:application_fee).compact
     
     @available_tags = Tag.joins(:courses)

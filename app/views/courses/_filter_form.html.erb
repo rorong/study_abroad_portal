@@ -1,20 +1,31 @@
-<%= form_with url: courses_path, method: :get, local: false, data: { controller: "search", turbo_frame: "courses_list" }, class: "mb-4" do |f| %>
+<%= form_with url: courses_path, method: :get, local: false, 
+    data: { 
+      controller: "search",
+      turbo_frame: "courses_list",
+      search_target: "form"
+    }, 
+    class: "mb-4" do |f| %>
     <div class="row g-3">
       <div class="col-md-4">
         <%= f.label :query, "Search Courses", class: "form-label" %>
-        <div class="position-relative">
+        <div class="position-relative d-flex">
           <%= f.text_field :query, 
             value: params[:query],
             class: "form-control",
             placeholder: "Search courses...",
             data: { 
               search_target: "input",
-              action: "input->search#search"
+              action: "input->search#updateQueryResults"
             } %>
           <button type="button"
               class="position-absolute top-50 end-0 translate-middle-y text-secondary pe-3 clear-search border-0 bg-transparent"
               data-action="search#clear">
             <i class="fas fa-times"></i>
+          </button>
+          <button type="button"
+              class="btn btn-primary ms-2"
+              data-action="search#performSearch">
+            <i class="fas fa-search"></i> Search
           </button>
         </div>
         
@@ -83,58 +94,100 @@
         %>
       </div>
       <div class="col-md-2">
-        <%= f.label :min_world_ranking, "Min World Ranking", class: "form-label" %>
-        <%= f.number_field :min_world_ranking,
-          value: params[:min_world_ranking],
-          placeholder: "Min World Rank",
-          class: "form-control form-control-lg py-3",
-          data: { action: "input->search#search" }
-        %>
+        <%= f.label :min_world_ranking, "World Ranking", class: "form-label" %>
+        <div class="d-flex align-items-center">
+          <%= f.number_field :min_world_ranking, 
+            value: params[:min_world_ranking],
+            placeholder: "Min",
+            class: "form-control form-control-sm me-2", 
+            data: { 
+              search_target: "minWorldRanking",
+              action: "input->search#search"
+            } %>
+          <span class="mx-2">-</span>
+          <%= f.number_field :max_world_ranking, 
+            value: params[:max_world_ranking],
+            placeholder: "Max",
+            class: "form-control form-control-sm", 
+            data: { 
+              search_target: "maxWorldRanking",
+              action: "input->search#search"
+            } %>
+        </div>
+        <div class="mt-2">
+          <input type="range" 
+            class="form-range" 
+            min="0" 
+            max="1000" 
+            step="10"
+            data-search-target="worldRankingSlider"
+            data-action="input->search#updateWorldRankingInputs"
+            value="<%= params[:max_world_ranking] || 1000 %>">
+        </div>
       </div>
       <div class="col-md-2">
-        <%= f.label :max_world_ranking, "Max World Ranking", class: "form-label" %>
-        <%= f.number_field :max_world_ranking,
-          value: params[:max_world_ranking],
-          placeholder: "Max World Rank",
-          class: "form-control form-control-lg py-3",
-          data: { action: "input->search#search" }
-        %>
+        <%= f.label :min_qs_ranking, "QS Ranking", class: "form-label" %>
+        <div class="d-flex align-items-center">
+          <%= f.number_field :min_qs_ranking, 
+            value: params[:min_qs_ranking],
+            placeholder: "Min",
+            class: "form-control form-control-sm me-2", 
+            data: { 
+              search_target: "minQsRanking",
+              action: "input->search#search"
+            } %>
+          <span class="mx-2">-</span>
+          <%= f.number_field :max_qs_ranking, 
+            value: params[:max_qs_ranking],
+            placeholder: "Max",
+            class: "form-control form-control-sm", 
+            data: { 
+              search_target: "maxQsRanking",
+              action: "input->search#search"
+            } %>
+        </div>
+        <div class="mt-2">
+          <input type="range" 
+            class="form-range" 
+            min="0" 
+            max="1000" 
+            step="10"
+            data-search-target="qsRankingSlider"
+            data-action="input->search#updateQsRankingInputs"
+            value="<%= params[:max_qs_ranking] || 1000 %>">
+        </div>
       </div>
       <div class="col-md-2">
-        <%= f.label :min_qs_ranking, "Min QS Ranking", class: "form-label" %>
-        <%= f.number_field :min_qs_ranking,
-          value: params[:min_qs_ranking],
-          placeholder: "Min QS Rank",
-          class: "form-control form-control-lg py-3",
-          data: { action: "input->search#search" }
-        %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :max_qs_ranking, "Max QS Ranking", class: "form-label" %>
-        <%= f.number_field :max_qs_ranking,
-          value: params[:max_qs_ranking],
-          placeholder: "Max QS Rank",
-          class: "form-control form-control-lg py-3",
-          data: { action: "input->search#search" }
-        %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :min_national_ranking, "Min National Ranking", class: "form-label" %>
-        <%= f.number_field :min_national_ranking,
-          value: params[:min_national_ranking],
-          placeholder: "Min National Rank",
-          class: "form-control form-control-lg py-3",
-          data: { action: "input->search#search" }
-        %>
-      </div>
-      <div class="col-md-2">
-        <%= f.label :max_national_ranking, "Max National Ranking", class: "form-label" %>
-        <%= f.number_field :max_national_ranking,
-          value: params[:max_national_ranking],
-          placeholder: "Max National Rank",
-          class: "form-control form-control-lg py-3",
-          data: { action: "input->search#search" }
-        %>
+        <%= f.label :min_national_ranking, "National Ranking", class: "form-label" %>
+        <div class="d-flex align-items-center">
+          <%= f.number_field :min_national_ranking, 
+            value: params[:min_national_ranking],
+            placeholder: "Min",
+            class: "form-control form-control-sm me-2", 
+            data: { 
+              search_target: "minNationalRanking",
+              action: "input->search#search"
+            } %>
+          <span class="mx-2">-</span>
+          <%= f.number_field :max_national_ranking, 
+            value: params[:max_national_ranking],
+            placeholder: "Max",
+            class: "form-control form-control-sm", 
+            data: { 
+              search_target: "maxNationalRanking",
+              action: "input->search#search"
+            } %>
+        </div>
+        <div class="mt-2">
+          <input type="range" 
+            class="form-range" 
+            min="0" 
+            max="500" 
+            step="5"
+            data-search-target="nationalRankingSlider"
+            data-action="input->search#updateNationalRankingInputs"
+            value="<%= params[:max_national_ranking] || 500 %>">
+        </div>
       </div>
       <div class="col-md-2">
         <%= f.label :intake, "Intake", class: "form-label" %>
@@ -174,15 +227,35 @@
       </div>
       <div class="col-md-2">
         <%= f.label :course_duration, "Duration", class: "form-label" %>
-        <%= f.select :course_duration, 
-          options_for_select(
-            @available_durations.map { |duration| ["#{duration} months (#{@courses.where(course_duration: duration).count})", duration] },
-            selected: params[:course_duration]
-          ),
-          { include_blank: "Duration" }, 
-          class: "form-control form-control-lg py-3", 
-          data: { action: "change->search#search" }
-        %>
+        <div class="d-flex align-items-center">
+          <%= f.number_field :min_duration, 
+            value: params[:min_duration],
+            placeholder: "Min",
+            class: "form-control form-control-sm me-2", 
+            data: { 
+              search_target: "minDuration",
+              action: "input->search#search"
+            } %>
+          <span class="mx-2">-</span>
+          <%= f.number_field :max_duration, 
+            value: params[:max_duration],
+            placeholder: "Max",
+            class: "form-control form-control-sm", 
+            data: { 
+              search_target: "maxDuration",
+              action: "input->search#search"
+            } %>
+        </div>
+        <div class="mt-2">
+          <input type="range" 
+            class="form-range" 
+            min="0" 
+            max="48" 
+            step="1"
+            data-search-target="durationSlider"
+            data-action="input->search#updateDurationInputs"
+            value="<%= params[:max_duration] || 48 %>">
+        </div>
       </div>
       <div class="col-md-2">
         <%= label_tag :tag_id, "Tag", class: "form-label" %>
@@ -228,19 +301,67 @@
       </div>
       <div class="col-md-2">
         <%= f.label :internship_period, "Internship Period", class: "form-label" %>
-        <%= f.select :internship_period, 
-          options_for_select(@available_internship_periods, selected: params[:internship_period]), 
-          { include_blank: "Internship Period" }, 
-          class: "form-select form-select-lg py-3", 
-          data: { action: "change->search#search" } %>
+        <div class="d-flex align-items-center">
+          <%= f.number_field :min_internship, 
+            value: params[:min_internship],
+            placeholder: "Min",
+            class: "form-control form-control-sm me-2", 
+            data: { 
+              search_target: "minInternship",
+              action: "input->search#search"
+            } %>
+          <span class="mx-2">-</span>
+          <%= f.number_field :max_internship, 
+            value: params[:max_internship],
+            placeholder: "Max",
+            class: "form-control form-control-sm", 
+            data: { 
+              search_target: "maxInternship",
+              action: "input->search#search"
+            } %>
+        </div>
+        <div class="mt-2">
+          <input type="range" 
+            class="form-range" 
+            min="0" 
+            max="24" 
+            step="1"
+            data-search-target="internshipSlider"
+            data-action="input->search#updateInternshipInputs"
+            value="<%= params[:max_internship] || 24 %>">
+        </div>
       </div>
       <div class="col-md-2">
         <%= f.label :application_fee, "Application Fee", class: "form-label" %>
-        <%= f.select :application_fee, 
-          options_for_select(@available_application_fees, selected: params[:application_fee]), 
-          { include_blank: "Application Fee" }, 
-          class: "form-select form-select-lg py-3", 
-          data: { action: "change->search#search" } %>
+        <div class="d-flex align-items-center">
+          <%= f.number_field :min_application_fee, 
+            value: params[:min_application_fee],
+            placeholder: "Min",
+            class: "form-control form-control-sm me-2", 
+            data: { 
+              search_target: "minApplicationFee",
+              action: "input->search#search"
+            } %>
+          <span class="mx-2">-</span>
+          <%= f.number_field :max_application_fee, 
+            value: params[:max_application_fee],
+            placeholder: "Max",
+            class: "form-control form-control-sm", 
+            data: { 
+              search_target: "maxApplicationFee",
+              action: "input->search#search"
+            } %>
+        </div>
+        <div class="mt-2">
+          <input type="range" 
+            class="form-range" 
+            min="0" 
+            max="500" 
+            step="10"
+            data-search-target="applicationFeeSlider"
+            data-action="input->search#updateApplicationFeeInputs"
+            value="<%= params[:max_application_fee] || 500 %>">
+        </div>
       </div>
     </div>
   <% end %>
