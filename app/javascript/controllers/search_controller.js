@@ -7,7 +7,8 @@ export default class SearchController extends Controller {
                     "minInternship", "maxInternship", "internshipSlider",
                     "minWorldRanking", "maxWorldRanking", "worldRankingSlider",
                     "minQsRanking", "maxQsRanking", "qsRankingSlider",
-                    "minNationalRanking", "maxNationalRanking", "nationalRankingSlider"];
+                    "minNationalRanking", "maxNationalRanking", "nationalRankingSlider",
+                    "minTuitionFee", "maxTuitionFee", "tuitionFeeSlider"];
 
   connect() {
     console.log("Search controller connected!");
@@ -56,6 +57,11 @@ export default class SearchController extends Controller {
     // Initialize national ranking slider if it exists
     if (this.hasNationalRankingSliderTarget) {
       this.initializeNationalRankingSlider();
+    }
+
+    // Initialize tuition fee slider if it exists
+    if (this.hasTuitionFeeSliderTarget) {
+      this.initializeTuitionFeeSlider();
     }
   }
 
@@ -133,6 +139,20 @@ export default class SearchController extends Controller {
     const slider = this.nationalRankingSliderTarget;
     const minInput = this.minNationalRankingTarget;
     const maxInput = this.maxNationalRankingTarget;
+
+    // Set initial values
+    if (minInput.value) {
+      slider.min = minInput.value;
+    }
+    if (maxInput.value) {
+      slider.value = maxInput.value;
+    }
+  }
+
+  initializeTuitionFeeSlider() {
+    const slider = this.tuitionFeeSliderTarget;
+    const minInput = this.minTuitionFeeTarget;
+    const maxInput = this.maxTuitionFeeTarget;
 
     // Set initial values
     if (minInput.value) {
@@ -237,6 +257,23 @@ export default class SearchController extends Controller {
     maxInput.value = slider.value;
     
     // If min national ranking is greater than max, update min to match max
+    if (parseInt(minInput.value) > parseInt(maxInput.value)) {
+      minInput.value = maxInput.value;
+    }
+
+    // Trigger search
+    this.search(event);
+  }
+
+  updateTuitionFeeInputs(event) {
+    const slider = event.target;
+    const maxInput = this.maxTuitionFeeTarget;
+    const minInput = this.minTuitionFeeTarget;
+
+    // Update max tuition fee input with slider value
+    maxInput.value = slider.value;
+    
+    // If min tuition fee is greater than max, update min to match max
     if (parseInt(minInput.value) > parseInt(maxInput.value)) {
       minInput.value = maxInput.value;
     }
