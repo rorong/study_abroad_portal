@@ -74,10 +74,19 @@ class Course < ApplicationRecord
       }
     end
   
-    results = __elasticsearch__.search(search_query).records
-  
+    # First search in courses
+    course_results = __elasticsearch__.search(search_query).records
+
+    # Then search in universities and get associated courses
+    university_results = University.where("name ILIKE ?", "%#{query}%")
+    university_courses = Course.joins(:universities).where(universities: { id: university_results.pluck(:id) })
+
+    # Group courses by university
+    all_courses = (course_results + university_courses).uniq
+    courses_by_university = all_courses.group_by { |course| course.universities.first }
+
     {
-      courses: results,
+      courses_by_university: courses_by_university,
       subjects: Subject.search_subjects(query),
       tests: StandardizedTest.search_tests(query)
     }

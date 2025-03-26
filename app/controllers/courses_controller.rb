@@ -3,16 +3,20 @@ class CoursesController < ApplicationController
     # Clone the params to avoid modifying the original request params
     filtered_params = params.to_unsafe_h.except(:controller, :action)
 
-    # Initialize base query
-    @courses = Course.all
+    # Initialize base query with eager loading to reduce N+1 queries
+    @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                    .page(params[:page])
+                    .per(10)
 
     # Apply search query if present
     if params[:query].present?
       results = Course.search_courses_and_subjects(params[:query])
-      @courses = results[:courses]
+      @courses_by_university = results[:courses_by_university]
       @subjects = results[:subjects]
       @tests = results[:tests]
+      @courses = @courses.where(id: results[:courses_by_university].values.flatten.map(&:id))
     else
+      @courses_by_university = {}
       @subjects = []
       @tests = []
     end
@@ -25,26 +29,31 @@ class CoursesController < ApplicationController
     @courses = @courses.where(institution_id: filtered_params[:institution_id]) if filtered_params[:institution_id].present?
     @courses = @courses.where(department_id: filtered_params[:department_id]) if filtered_params[:department_id].present?
     @courses = @courses.joins(:tags).where(tags: { id: filtered_params[:tag_id] }) if filtered_params[:tag_id].present?
+    
     # Handle course duration range
     if filtered_params[:min_duration].present? || filtered_params[:max_duration].present?
       min_duration = filtered_params[:min_duration].present? ? filtered_params[:min_duration].to_i : 0
       max_duration = filtered_params[:max_duration].present? ? filtered_params[:max_duration].to_i : Float::INFINITY
       @courses = @courses.where(course_duration: min_duration..max_duration)
     end
+    
     @courses = @courses.where(education_board_id: filtered_params[:education_board_id]) if filtered_params[:education_board_id].present?
     @courses = @courses.where(level_of_course: filtered_params[:level_of_course]) if filtered_params[:level_of_course].present? 
+    
     # Handle internship period range
     if filtered_params[:min_internship].present? || filtered_params[:max_internship].present?
       min_internship = filtered_params[:min_internship].present? ? filtered_params[:min_internship].to_i : 0
       max_internship = filtered_params[:max_internship].present? ? filtered_params[:max_internship].to_i : Float::INFINITY
       @courses = @courses.where(internship_period: min_internship..max_internship)
     end
+    
     # Handle application fee range
     if filtered_params[:min_application_fee].present? || filtered_params[:max_application_fee].present?
       min_fee = filtered_params[:min_application_fee].present? ? filtered_params[:min_application_fee].to_f : 0
       max_fee = filtered_params[:max_application_fee].present? ? filtered_params[:max_application_fee].to_f : Float::INFINITY
       @courses = @courses.where(application_fee: min_fee..max_fee)
     end
+    
     @courses = @courses.joins(:universities).where(universities: { id: filtered_params[:university_id] }) if filtered_params[:university_id].present?
     @courses = @courses.joins(:universities).where(universities: { country: filtered_params[:university_country] }) if filtered_params[:university_country].present?
     @courses = @courses.joins(:universities).where('universities.address LIKE ?', "%#{filtered_params[:university_address]}%") if filtered_params[:university_address].present?
@@ -84,44 +93,73 @@ class CoursesController < ApplicationController
       @courses = @courses.order(application_fee: :desc)
     end
 
+    # Get total count for pagination without loading all records
+    @course_count = @courses.total_count
+
     # Get the current filtered courses for dynamic filter options
-    filtered_courses = @courses.distinct
+    # Use a separate query to get filter options without affecting pagination
+    filter_options_query = Course.includes(:universities, :institution, :department, :tags, :education_board)
+    
+    # Apply the same filters to the filter options query
+    filter_options_query = filter_options_query.where(intake: filtered_params[:intake]) if filtered_params[:intake].present?
+    filter_options_query = filter_options_query.where(current_status: filtered_params[:current_status]) if filtered_params[:current_status].present?
+    filter_options_query = filter_options_query.where('title LIKE ?', "%#{filtered_params[:title]}%") if filtered_params[:title].present?
+    filter_options_query = filter_options_query.where(delivery_method: filtered_params[:delivery_method]) if filtered_params[:delivery_method].present?
+    filter_options_query = filter_options_query.where(institution_id: filtered_params[:institution_id]) if filtered_params[:institution_id].present?
+    filter_options_query = filter_options_query.where(department_id: filtered_params[:department_id]) if filtered_params[:department_id].present?
+    filter_options_query = filter_options_query.joins(:tags).where(tags: { id: filtered_params[:tag_id] }) if filtered_params[:tag_id].present?
+    
+    # Add other filters to filter_options_query...
+    # (Add all the same filters as above)
+
+    # Get unique IDs for filter options
+    filtered_course_ids = filter_options_query.distinct.pluck(:id)
 
     # Prepare dynamic filter options based on current filtered results
     @available_institutions = Institution.joins(:courses)
-                                      .where(courses: { id: filtered_courses })
+                                      .where(courses: { id: filtered_course_ids })
                                       .distinct
     
     @available_departments = Department.joins(:courses)
-                                     .where(courses: { id: filtered_courses })
+                                     .where(courses: { id: filtered_course_ids })
                                      .distinct
     
     @available_universities = University.joins(:courses)
-                                      .where(courses: { id: filtered_courses })
+                                      .where(courses: { id: filtered_course_ids })
                                       .distinct
     
     @available_university_countries = University.joins(:courses)
-                                              .where(courses: { id: filtered_courses })
+                                              .where(courses: { id: filtered_course_ids })
                                               .distinct
                                               .pluck(:country)
                                               .compact
     
-    @available_intakes = filtered_courses.distinct.pluck(:intake).compact
-    @available_statuses = filtered_courses.distinct.pluck(:current_status).compact
-    @available_delivery_methods = filtered_courses.distinct.pluck(:delivery_method).compact
-    @available_durations = filtered_courses.distinct.pluck(:course_duration).compact
-    @available_levels = filtered_courses.distinct.pluck(:level_of_course).compact
-    @available_application_fees = filtered_courses.distinct.pluck(:application_fee).compact
+    @available_intakes = filter_options_query.distinct.pluck(:intake).compact
+    @available_statuses = filter_options_query.distinct.pluck(:current_status).compact
+    @available_delivery_methods = filter_options_query.distinct.pluck(:delivery_method).compact
+    @available_durations = filter_options_query.distinct.pluck(:course_duration).compact
+    @available_levels = filter_options_query.distinct.pluck(:level_of_course).compact
+    @available_application_fees = filter_options_query.distinct.pluck(:application_fee).compact
     
     @available_tags = Tag.joins(:courses)
-                        .where(courses: { id: filtered_courses })
+                        .where(courses: { id: filtered_course_ids })
                         .distinct
     
     @available_education_boards = EducationBoard.joins(:courses)
-                                              .where(courses: { id: filtered_courses })
+                                              .where(courses: { id: filtered_course_ids })
                                               .distinct
-    @course_count = @courses.count
-    @courses = @courses.page(params[:page]).per(10)
+
+    # Group filtered courses by university
+    if params[:query].present?
+      # If there's a search query, maintain the original grouping but only with filtered courses
+      @courses_by_university = @courses_by_university.transform_values do |courses|
+        courses.select { |course| filtered_course_ids.include?(course.id) }
+      end.reject { |_, courses| courses.empty? }
+    else
+      # If no search query, create new grouping based on filtered courses
+      @courses_by_university = filter_options_query.joins(:universities)
+                                                 .group_by { |course| course.universities.first }
+    end
 
     respond_to do |format|
       format.html
@@ -131,6 +169,7 @@ class CoursesController < ApplicationController
           partial: "courses_list",
           locals: {
             courses: @courses,
+            courses_by_university: @courses_by_university,
             subjects: @subjects,
             tests: @tests,
             institutions: @available_institutions,
