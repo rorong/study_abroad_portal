@@ -4,7 +4,7 @@
 
 <div data-controller="search">
   <%# Optimize filter processing by caching the lookups %>
-<% selected_filters = {}.tap do |filters|
+  <% selected_filters = {}.tap do |filters|
     if params[:institution_id].present?
       filters[:institution_id] = institutions.find { |i| i.id.to_s == params[:institution_id] }&.name
     end
@@ -145,97 +145,54 @@
   </div>
 
   <% if courses.any? %>
-    <% if params[:query].present? && courses_by_university.present? %>
-      <% courses_by_university.each do |university, university_courses| %>
-        <div class="mb-5">
-          <div class="bg-light p-3 rounded mb-3">
-            <h4 class="mb-0">
-              <i class="fas fa-university me-2"></i>
-              <%= university.name %>
-            </h4>
-          </div>
-          <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            <% university_courses.each do |course| %>
-              <% cache course do %>
-                <div class="col">
-                  <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
-                    <div class="card-header bg-primary text-white">
-                      <h5 class="card-title m-0 fw-bold"><%= course.name %></h5>
-                    </div>
-                    <div class="card-body">
-                      <% if course.title.present? %>
-                        <p class="card-subtitle text-muted mb-2"><%= course.title %></p>
-                      <% end %>
-                      <p class="mb-1"><strong>🏫 Institution:</strong> <%= course.institution.name %></p>
-                      <p class="mb-1"><strong>📚 Department:</strong> <%= course.department.name %></p>
-                      <p class="mb-1"><strong>📌 Level:</strong> <%= course.level_of_course || "N/A" %></p>
-                      <p class="mb-1"><strong>⏳ Duration:</strong> <%= course.course_duration %> months</p>
-                      <p class="mb-1"><strong>📅 Intake:</strong> <%= course.intake || "N/A" %></p>
-                      <p class="mb-1"><strong>🚚 Delivery Method:</strong> <%= course.delivery_method || "N/A" %></p>
-                      <% if course.tuition_fee_international.present? %>
-                        <p class="mb-1"><strong>💰 Tuition (Intl):</strong> $<%= number_with_delimiter(course.tuition_fee_international) %></p>
-                      <% end %>
-                      <% if course.application_fee.present? %>
-                        <p class="mb-1"><strong>📝 Application Fee:</strong> $<%= course.application_fee %></p>
-                      <% end %>
-                    </div>
-                    <div class="card-footer bg-white border-0 text-center">
-                      <%= link_to course_path(course), class: "btn btn-outline-primary w-100 fw-bold", data: { turbo: false } do %>
-                        <i class="fas fa-info-circle me-2"></i>View Details
-                      <% end %>
-                      <% if course.course_weblink.present? %>
-                        <a href="<%= course.course_weblink %>" target="_blank" class="btn btn-outline-warning w-100 fw-bold mt-2">
-                          <i class="fas fa-external-link-alt me-2"></i>Visit Website
-                        </a>
-                      <% end %>
-                    </div>
+    <% courses_by_university.each do |university, university_courses| %>
+      <div class="mb-5">
+        <div class="bg-light p-3 rounded mb-3">
+          <h4 class="mb-0">
+            <i class="fas fa-university me-2"></i>
+            <%= university.name %>
+          </h4>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <% university_courses.each do |course| %>
+            <% cache course do %>
+              <div class="col">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
+                  <div class="card-header bg-primary text-white">
+                    <h5 class="card-title m-0 fw-bold"><%= course.name %></h5>
+                  </div>
+                  <div class="card-body">
+                    <% if course.title.present? %>
+                      <p class="card-subtitle text-muted mb-2"><%= course.title %></p>
+                    <% end %>
+                    <p class="mb-1"><strong>🏫 Universities:</strong> <%= course.universities.map(&:name).join(", ") %></p>
+                    <p class="mb-1"><strong>📚 Department:</strong> <%= course.department.name %></p>
+                    <p class="mb-1"><strong>📌 Level:</strong> <%= course.level_of_course || "N/A" %></p>
+                    <p class="mb-1"><strong>⏳ Duration:</strong> <%= course.course_duration %> months</p>
+                    <p class="mb-1"><strong>📅 Intake:</strong> <%= course.intake || "N/A" %></p>
+                    <p class="mb-1"><strong>🚚 Delivery Method:</strong> <%= course.delivery_method || "N/A" %></p>
+                    <% if course.tuition_fee_international.present? %>
+                      <p class="mb-1"><strong>💰 Tuition (Intl):</strong> $<%= number_with_delimiter(course.tuition_fee_international) %></p>
+                    <% end %>
+                    <% if course.application_fee.present? %>
+                      <p class="mb-1"><strong>📝 Application Fee:</strong> $<%= course.application_fee %></p>
+                    <% end %>
+                  </div>
+                  <div class="card-footer bg-white border-0 text-center">
+                    <%= link_to course_path(course), class: "btn btn-outline-primary w-100 fw-bold", data: { turbo: false } do %>
+                      <i class="fas fa-info-circle me-2"></i>View Details
+                    <% end %>
+                    <% if course.course_weblink.present? %>
+                      <a href="<%= course.course_weblink %>" target="_blank" class="btn btn-outline-warning w-100 fw-bold mt-2">
+                        <i class="fas fa-external-link-alt me-2"></i>Visit Website
+                      </a>
+                    <% end %>
                   </div>
                 </div>
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    <% else %>
-      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <% courses.each do |course| %>
-          <% cache course do %>
-            <div class="col">
-              <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
-                <div class="card-header bg-primary text-white">
-                  <h5 class="card-title m-0 fw-bold"><%= course.name %></h5>
-                </div>
-                <div class="card-body">
-                  <% if course.title.present? %>
-                    <p class="card-subtitle text-muted mb-2"><%= course.title %></p>
-                  <% end %>
-                  <p class="mb-1"><strong>🏫 Institution:</strong> <%= course.institution.name %></p>
-                  <p class="mb-1"><strong>📚 Department:</strong> <%= course.department.name %></p>
-                  <p class="mb-1"><strong>📌 Level:</strong> <%= course.level_of_course || "N/A" %></p>
-                  <p class="mb-1"><strong>⏳ Duration:</strong> <%= course.course_duration %> months</p>
-                  <p class="mb-1"><strong>📅 Intake:</strong> <%= course.intake || "N/A" %></p>
-                  <p class="mb-1"><strong>🚚 Delivery Method:</strong> <%= course.delivery_method || "N/A" %></p>
-                  <% if course.tuition_fee_international.present? %>
-                    <p class="mb-1"><strong>💰 Tuition (Intl):</strong> $<%= number_with_delimiter(course.tuition_fee_international) %></p>
-                  <% end %>
-                  <% if course.application_fee.present? %>
-                    <p class="mb-1"><strong>📝 Application Fee:</strong> $<%= course.application_fee %></p>
-                  <% end %>
-                </div>
-                <div class="card-footer bg-white border-0 text-center">
-                  <%= link_to course_path(course), class: "btn btn-outline-primary w-100 fw-bold", data: { turbo: false } do %>
-                    <i class="fas fa-info-circle me-2"></i>View Details
-                  <% end %>
-                  <% if course.course_weblink.present? %>
-                    <a href="<%= course.course_weblink %>" target="_blank" class="btn btn-outline-warning w-100 fw-bold mt-2">
-                      <i class="fas fa-external-link-alt me-2"></i>Visit Website
-                    </a>
-                  <% end %>
-                </div>
               </div>
-            </div>
+            <% end %>
           <% end %>
-        <% end %>
+        </div>
       </div>
     <% end %>
   <% else %>

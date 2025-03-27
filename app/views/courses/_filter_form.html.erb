@@ -20,7 +20,7 @@
           <button type="button"
               class="position-absolute top-50 end-0 translate-middle-y text-secondary pe-3 clear-search border-0 bg-transparent"
               data-action="search#clear"
-              style="margin-right: 5%; font-size: 1.8rem;">
+              style="margin-right: 8%; font-size: 1.8rem;">
             <i class="fas fa-times"></i>
           </button>
           <button type="button"
@@ -34,7 +34,7 @@
           <div data-search-target="resultsContainer" class="search-results-container overflow-auto" style="max-height: 200px"></div>
         </div>
       </div>
-      <div class="col-md-2">
+      <!-- <div class="col-md-2">
         <%= f.label :institution_id, "Institution", class: "form-label" %>
         <%= f.select :institution_id, 
           options_from_collection_for_select(
@@ -46,7 +46,7 @@
           class: "form-select form-select-lg py-3", 
           data: { action: "change->search#search" }
         %>
-      </div>
+      </div>-->
       <div class="col-md-2">
         <%= f.label :department_id, "Department", class: "form-label" %>
         <%= f.select :department_id, 
