@@ -92,6 +92,10 @@
       distance_range << "Max: #{params[:max_distance]} km" if params[:max_distance].present?
       filters[:distance] = "Distance (#{distance_range.join(' - ')})"
     end
+    # Handle latitude and longitude
+    if params[:latitude].present? && params[:longitude].present?
+      filters[:location] = "Location (#{params[:latitude].to_f.round(4)}, #{params[:longitude].to_f.round(4)})"
+    end
   end %>
 
   <% if selected_filters.any? %>
@@ -114,6 +118,15 @@
                 <% new_params.delete("min_#{base_key}".to_sym) %>
                 <% new_params.delete("max_#{base_key}".to_sym) %>
               <% end %>
+              <%= link_to "X", courses_path(new_params), 
+                          class: "text-white ms-2 text-decoration-none fw-bold", 
+                          method: :get, 
+                          onclick: "window.location.href=this.href; return false;" %>
+            <% elsif key == :location %>
+              <%# Handle lat/long removal %>
+              <% new_params = query_params.dup %>
+              <% new_params.delete(:latitude) %>
+              <% new_params.delete(:longitude) %>
               <%= link_to "X", courses_path(new_params), 
                           class: "text-white ms-2 text-decoration-none fw-bold", 
                           method: :get, 

@@ -28,6 +28,23 @@ class CoursesController < ApplicationController
     @courses = @courses.where(department_id: filtered_params[:department_id]) if filtered_params[:department_id].present?
     @courses = @courses.joins(:tags).where(tags: { id: filtered_params[:tag_id] }) if filtered_params[:tag_id].present?
     
+    # Handle distance-based filtering
+    if filtered_params[:latitude].present? && filtered_params[:longitude].present?
+      lat = filtered_params[:latitude].to_f
+      lng = filtered_params[:longitude].to_f
+      distance = 50 # 50 km radius
+      
+      # Convert string coordinates to float and calculate distance
+      @courses = @courses.joins(:universities)
+                        .where("(
+                          6371 * acos(
+                            cos(radians(CAST(? AS float))) * cos(radians(CAST(universities.latitude AS float))) *
+                            cos(radians(CAST(universities.longitude AS float)) - radians(CAST(? AS float))) +
+                            sin(radians(CAST(? AS float))) * sin(radians(CAST(universities.latitude AS float)))
+                          )
+                        ) <= ?", lat, lng, lat, distance)
+    end
+    
     # Handle course duration range
     if filtered_params[:min_duration].present? || filtered_params[:max_duration].present?
       min_duration = filtered_params[:min_duration].present? ? filtered_params[:min_duration].to_i : 0
@@ -54,7 +71,7 @@ class CoursesController < ApplicationController
     
     @courses = @courses.joins(:universities).where(universities: { id: filtered_params[:university_id] }) if filtered_params[:university_id].present?
     @courses = @courses.joins(:universities).where(universities: { country: filtered_params[:university_country] }) if filtered_params[:university_country].present?
-    @courses = @courses.joins(:universities).where('universities.address LIKE ?', "%#{filtered_params[:university_address]}%") if filtered_params[:university_address].present?
+    @courses = @courses.joins(:universities).where('universities.address LIKE ?', "%#{filtered_params[:university_address]}%") if filtered_params[:university_address].present? && !filtered_params[:latitude].present?
     
     # Add ranking filters
     if filtered_params[:min_world_ranking].present? || filtered_params[:max_world_ranking].present?

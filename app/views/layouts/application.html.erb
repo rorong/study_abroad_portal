@@ -22,6 +22,51 @@
     <%= javascript_importmap_tags %>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <!-- Add Google Maps JavaScript API with error handling -->
+    <script>
+      // Debug function to check API status
+      function checkGoogleMapsStatus() {
+        console.log('Checking Google Maps API status...');
+        if (window.google && window.google.maps) {
+          console.log('Google Maps API is loaded and available');
+          console.log('Available APIs:', Object.keys(window.google.maps));
+          return true;
+        } else {
+          console.log('Google Maps API is not loaded');
+          return false;
+        }
+      }
+
+      function initGoogleMaps() {
+        console.log('Google Maps API loaded successfully');
+        checkGoogleMapsStatus();
+        // Dispatch a custom event when Google Maps is loaded
+        window.dispatchEvent(new Event('google-maps-loaded'));
+      }
+
+      function handleGoogleMapsError(error) {
+        console.error('Google Maps API failed to load:', error);
+        // Show user-friendly error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-warning alert-dismissible fade show';
+        errorDiv.innerHTML = `
+          <strong>Warning:</strong> Google Maps functionality is not available. Please check your internet connection or try again later.
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        document.body.insertBefore(errorDiv, document.body.firstChild);
+      }
+
+      // Check API status on page load
+      window.addEventListener('load', () => {
+        console.log('Page loaded, checking Google Maps API...');
+        checkGoogleMapsStatus();
+      });
+    </script>
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjw3HIsW8WLLriMQ_u3wQng2ggRKRP2cg&libraries=places&callback=initGoogleMaps"
+      onerror="handleGoogleMapsError">
+    </script>
+
   </head>
 
   <body>

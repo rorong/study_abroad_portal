@@ -8,12 +8,14 @@ export default class SearchController extends Controller {
                     "minWorldRanking", "maxWorldRanking", "worldRankingSlider",
                     "minQsRanking", "maxQsRanking", "qsRankingSlider",
                     "minNationalRanking", "maxNationalRanking", "nationalRankingSlider",
-                    "minTuitionFee", "maxTuitionFee", "tuitionFeeSlider"];
+                    "minTuitionFee", "maxTuitionFee", "tuitionFeeSlider",
+                    "addressInput", "latitude", "longitude", "addressError"];
 
   connect() {
     console.log("Search controller connected!");
     this.timeout = null;
     this.searchTimeout = null;
+    this.autocomplete = null;
     
     // Add click outside listener only if queryResults target exists
     if (this.hasQueryResultsTarget) {
@@ -26,6 +28,11 @@ export default class SearchController extends Controller {
 
     // Initialize all sliders
     this.initializeSliders();
+
+    // Initialize Google Places Autocomplete if address input exists
+    if (this.hasAddressInputTarget) {
+      this.initializeGooglePlaces();
+    }
   }
 
   initializeSliders() {
@@ -163,6 +170,103 @@ export default class SearchController extends Controller {
     }
   }
 
+  initializeGooglePlaces() {
+    // Function to initialize Google Places
+    const initPlaces = () => {
+      try {
+        console.log('Initializing Google Places...');
+        
+        if (!window.google || !window.google.maps) {
+          console.error('Google Maps API not loaded');
+          this.showAddressError('Google Maps API is not available');
+          return;
+        }
+
+        if (!window.google.maps.places) {
+          console.error('Google Places API not loaded');
+          this.showAddressError('Google Places API is not available');
+          return;
+        }
+
+        const input = this.addressInputTarget;
+        console.log('Found address input:', input);
+        
+        // Initialize autocomplete with no country restrictions
+        this.autocomplete = new google.maps.places.Autocomplete(input, {
+          types: ['address']
+          // Removed componentRestrictions to allow all countries
+        });
+        console.log('Google Places Autocomplete initialized');
+
+        // Add place_changed listener
+        this.autocomplete.addListener('place_changed', () => {
+          console.log('Place changed event triggered');
+          const place = this.autocomplete.getPlace();
+          console.log('Selected place:', place);
+          
+          if (place.geometry) {
+            // Update hidden fields with lat/lng
+            this.latitudeTarget.value = place.geometry.location.lat();
+            this.longitudeTarget.value = place.geometry.location.lng();
+            
+            // Store the formatted address temporarily
+            const addressInput = this.addressInputTarget;
+            addressInput.value = place.formatted_address;
+            
+            // Clear any error message
+            this.clearAddressError();
+            
+            // Trigger search
+            this.search({ target: input });
+          } else {
+            console.error('Selected place has no geometry');
+            this.showAddressError('Selected location is not valid');
+          }
+        });
+
+        // Style the autocomplete dropdown
+        const pacContainer = document.querySelector('.pac-container');
+        if (pacContainer) {
+          pacContainer.style.zIndex = '1050';
+          console.log('Styled autocomplete dropdown');
+        } else {
+          console.warn('Could not find pac-container element');
+        }
+      } catch (error) {
+        console.error('Error initializing Google Places:', error);
+        this.showAddressError('Error initializing address search');
+      }
+    };
+
+    // Check if Google Maps is already loaded
+    if (window.google && window.google.maps) {
+      console.log('Google Maps already loaded, initializing Places...');
+      initPlaces();
+    } else {
+      console.log('Waiting for Google Maps to load...');
+      // Wait for Google Maps to load
+      window.addEventListener('google-maps-loaded', () => {
+        console.log('Google Maps loaded event received, initializing Places...');
+        initPlaces();
+      });
+    }
+  }
+
+  showAddressError(message) {
+    const errorElement = this.element.querySelector('[data-search-target="addressError"]');
+    if (errorElement) {
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+  }
+
+  clearAddressError() {
+    const errorElement = this.element.querySelector('[data-search-target="addressError"]');
+    if (errorElement) {
+      errorElement.style.display = 'none';
+    }
+  }
+
   updateDurationInputs(event) {
     const slider = event.target;
     const maxInput = this.maxDurationTarget;
@@ -283,14 +387,22 @@ export default class SearchController extends Controller {
   }
 
   search(event) {
+    // Don't trigger search if it's the address input and no place has been selected
+    if (event.target === this.addressInputTarget && !this.latitudeTarget.value) {
+      return;
+    }
+
     console.log("Searching...");
     clearTimeout(this.timeout);
+    
     // Find the closest form element
     const form = event.target.closest('form');
+    
     // Always update query results for search input if target exists
     if (event.target.matches('[data-search-target="input"]') && this.hasQueryResultsTarget) {
       this.updateQueryResults(event);
     }
+    
     // Set timeout for form submission
     this.timeout = setTimeout(() => {
       if (form) {
@@ -298,6 +410,7 @@ export default class SearchController extends Controller {
       }
     }, 300);
   }
+
   updateQueryResults(event) {
     const query = event.target.value.trim();
     console.log("Updating query results for:", query);
@@ -395,6 +508,16 @@ export default class SearchController extends Controller {
     window.history.pushState({}, '', baseUrl);
     // Submit the form to update results
     Turbo.visit(form.action + '?' + new URLSearchParams(new FormData(form)), { action: "replace" });
+  }
+
+  handleAddressKeydown(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      // Only trigger search if we have a valid place selected
+      if (this.latitudeTarget.value && this.longitudeTarget.value) {
+        this.search(event);
+      }
+    }
   }
 }
  
