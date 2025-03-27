@@ -34,6 +34,13 @@ namespace :import do
             uni.conditional_offers = row["Do they issue Conditional Offers"] == "true"
             uni.lateral_entry_allowed = row["Is Lateral Entry Allowed"] == "true"
             uni.on_campus_accommodation = row["On Campus Accommodation available"] == "true"
+            if row["Latitude Longitude"].present?
+              lat_long = row["Latitude Longitude"].split(/[,\s]+/)
+              if lat_long.length >= 2
+                uni.latitude = lat_long[0].strip
+                uni.longitude = lat_long[1].strip
+              end
+            end
           end
           university.save!(validate: false)
 

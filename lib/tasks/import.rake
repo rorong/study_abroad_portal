@@ -78,6 +78,7 @@ namespace :import do
             delete_record: row['Should we delete this record'] == 'true',
             locked: row['Locked'] == 'true',
             record_status: row['Record Status'],
+            allow_backlogs: row['Number of Backlogs accepted'],
             module_subjects: row["Modules / Subjects Taught"]&.gsub("\n", " ")
           )
           course.save(validate: false)

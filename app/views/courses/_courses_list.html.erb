@@ -18,6 +18,13 @@
     filters[:level_of_course] = params[:level_of_course] if params[:level_of_course].present?
     filters[:internship_period] = params[:internship_period] if params[:internship_period].present?
     filters[:application_fee] = "$#{params[:application_fee]}" if params[:application_fee].present?
+    filters[:allow_backlogs] = case params[:allow_backlogs]
+                              when "0" then "No Backlogs"
+                              when "2" then "1-2 Backlogs"
+                              when "5" then "3-5 Backlogs"
+                              when "10" then "More than 5 Backlogs"
+                              end if params[:allow_backlogs].present?
+    filters[:lateral_entry_possible] = params[:lateral_entry_possible] == "true" ? "Lateral Entry: Yes" : "Lateral Entry: No" if params[:lateral_entry_possible].present?
     if params[:tag_id].present?
       filters[:tag_id] = tags.find { |t| t.id.to_s == params[:tag_id] }&.tag_name
     end
@@ -38,6 +45,7 @@
     # Add new university-related filters
     filters[:university_country] = params[:university_country] if params[:university_country].present?
     filters[:university_address] = params[:university_address] if params[:university_address].present?
+    filters[:type_of_university] = params[:type_of_university] if params[:type_of_university].present?
     
     # Add ranking filters
     if params[:min_world_ranking].present? || params[:max_world_ranking].present?

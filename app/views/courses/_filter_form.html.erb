@@ -20,7 +20,7 @@
           <button type="button"
               class="position-absolute top-50 end-0 translate-middle-y text-secondary pe-3 clear-search border-0 bg-transparent"
               data-action="search#clear"
-              style="margin-right: 8%; font-size: 1.8rem;">
+              style="margin-right: 14%; font-size: 1.8rem;">
             <i class="fas fa-times"></i>
           </button>
           <button type="button"
@@ -28,6 +28,9 @@
               data-action="search#performSearch">
             <i class="fas fa-search"></i> Search
           </button>
+          <%= link_to map_courses_path, class: "btn btn-info ms-2", data: { turbo: false } do %>
+            <i class="fas fa-map-marked-alt"></i> View Map
+          <% end %>
         </div>
         
         <div data-search-target="queryResults" class="d-none">
@@ -86,6 +89,18 @@
         %>
       </div>
       <div class="col-md-2">
+        <%= f.label :type_of_university, "University Type", class: "form-label" %>
+        <%= f.select :type_of_university,
+          options_for_select(
+            @available_university_types.map { |type| ["#{type} (#{University.joins(:courses).where(type_of_university: type).count})", type] },
+            selected: params[:type_of_university]
+          ),
+          { include_blank: "University Type" },
+          class: "form-select form-select-lg py-3",
+          data: { action: "change->search#search" }
+        %>
+      </div>
+      <div class="col-md-2">
         <%= f.label :university_address, "University Address", class: "form-label" %>
         <div class="position-relative">
           <%= f.text_field :university_address,
@@ -112,6 +127,33 @@
           { include_blank: "Level of Course" }, 
           class: "form-select form-select-lg py-3", 
           data: { action: "change->search#search" } %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :allow_backlogs, "Backlogs Allowed", class: "form-label" %>
+        <%= f.select :allow_backlogs,
+          options_for_select(
+            Course.distinct.pluck(:allow_backlogs).map do |backlogs|
+              ["#{backlogs} Backlogs (#{Course.where(allow_backlogs: backlogs).count})", backlogs]
+            end,
+            selected: params[:allow_backlogs]
+          ),
+          { include_blank: "Backlogs Allowed" },
+          class: "form-select form-select-lg py-3",
+          data: { action: "change->search#search" }
+        %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :lateral_entry_possible, "Lateral Entry", class: "form-label" %>
+        <%= f.select :lateral_entry_possible,
+          options_for_select(
+            [["Yes (#{Course.joins(:course_requirement).where(course_requirements: { lateral_entry_possible: true }).count})", true], 
+             ["No (#{Course.joins(:course_requirement).where(course_requirements: { lateral_entry_possible: false }).count})", false]],
+            selected: params[:lateral_entry_possible]
+          ),
+          { include_blank: "Lateral Entry" },
+          class: "form-select form-select-lg py-3",
+          data: { action: "change->search#search" }
+        %>
       </div>
       <div class="col-md-2">
         <%= f.label :intake, "Intake", class: "form-label" %>

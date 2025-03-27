@@ -27,7 +27,9 @@ class CoursesController < ApplicationController
     @courses = @courses.where(institution_id: filtered_params[:institution_id]) if filtered_params[:institution_id].present?
     @courses = @courses.where(department_id: filtered_params[:department_id]) if filtered_params[:department_id].present?
     @courses = @courses.joins(:tags).where(tags: { id: filtered_params[:tag_id] }) if filtered_params[:tag_id].present?
-    
+    @courses = @courses.where(allow_backlogs: filtered_params[:allow_backlogs]) if filtered_params[:allow_backlogs].present?
+    @courses = @courses.joins(:course_requirement).where(course_requirements: { lateral_entry_possible: filtered_params[:lateral_entry_possible] }) if filtered_params[:lateral_entry_possible].present?
+    @courses = @courses.joins(:universities).where(universities: { type_of_university: filtered_params[:type_of_university] }) if filtered_params[:type_of_university].present?
     # Handle distance-based filtering
     if filtered_params[:latitude].present? && filtered_params[:longitude].present?
       lat = filtered_params[:latitude].to_f
@@ -112,7 +114,7 @@ class CoursesController < ApplicationController
     @course_count = @courses.count
 
     # Apply pagination after all filters
-    @courses = @courses.page(params[:page]).per(10)
+    @courses = @courses.page(params[:page]).per(20)
 
     # Check if any filters are active
     has_filters = filtered_params.any? { |key, value| value.present? } || params[:query].present?
@@ -141,6 +143,12 @@ class CoursesController < ApplicationController
                                                 .pluck(:country)
                                                 .compact
       
+      @available_university_types = University.joins(:courses)
+                                                .where(courses: { id: filtered_course_ids })
+                                                .distinct
+                                                .pluck(:type_of_university)
+                                                .compact
+      
       @available_intakes = @courses.distinct.pluck(:intake).compact
       @available_statuses = @courses.distinct.pluck(:current_status).compact
       @available_delivery_methods = @courses.distinct.pluck(:delivery_method).compact
@@ -161,6 +169,7 @@ class CoursesController < ApplicationController
       @available_departments = Department.joins(:courses).distinct
       @available_universities = University.joins(:courses).distinct
       @available_university_countries = University.distinct.pluck(:country).compact
+      @available_university_types = University.distinct.pluck(:type_of_university).compact
       @available_intakes = Course.distinct.pluck(:intake).compact
       @available_statuses = Course.distinct.pluck(:current_status).compact
       @available_delivery_methods = Course.distinct.pluck(:delivery_method).compact
@@ -232,6 +241,14 @@ class CoursesController < ApplicationController
     
     respond_to do |format|
       format.json { render json: { courses: @courses } }
+    end
+  end
+
+  def map
+    @universities = University.where.not(latitude: nil, longitude: nil)
+    Rails.logger.info "Found #{@universities.count} universities with coordinates"
+    @universities.each do |u|
+      Rails.logger.info "University: #{u.name}, Lat: #{u.latitude}, Long: #{u.longitude}"
     end
   end
 end
