@@ -1,0 +1,227 @@
+<style>
+  .search-page-wrapper {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .search-page-wrapper .container {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+  }
+
+  .search-page-wrapper .fx {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .search-page-wrapper form {
+    position: relative;
+    width: 100%;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(255, 107, 107, 0.15);
+    padding: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .search-page-wrapper form:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 70px rgba(255, 107, 107, 0.2);
+  }
+
+  .search-page-wrapper input[type="text"] {
+    width: 100%;
+    height: 64px;
+    padding: 0 24px;
+    font-size: 18px;
+    border: none;
+    background: transparent;
+    color: #2d3748;
+    outline: none;
+    font-weight: 500;
+  }
+
+  .search-page-wrapper input[type="text"]::placeholder {
+    color: #a0aec0;
+    font-weight: 400;
+  }
+
+  .search-page-wrapper button {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #ff6b6b;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin-right: 8px;
+  }
+
+  .search-page-wrapper button:hover {
+    background: #ff5252;
+    transform: translateY(-1px);
+  }
+
+  .search-page-wrapper #search-icon-circle {
+    width: 24px;
+    height: 24px;
+    border: 3px solid white;
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .search-page-wrapper button span {
+    position: absolute;
+    width: 16px;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    transform: rotate(45deg);
+    transition: all 0.3s ease;
+  }
+
+  .search-page-wrapper button:hover #search-icon-circle {
+    transform: scale(1.1);
+  }
+
+  .search-page-wrapper [data-search-target="queryResults"] {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+  }
+
+  .search-page-wrapper [data-search-target="queryResults"]:not(.d-none) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .search-page-wrapper .course-result {
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .search-page-wrapper .course-result:last-child {
+    border-bottom: none;
+  }
+
+  .search-page-wrapper .course-result:hover {
+    background: #fff5f5;
+  }
+
+  .search-page-wrapper .course-result .fw-bold {
+    color: #2d3748;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .search-page-wrapper .course-result .text-muted {
+    color: #718096;
+    font-size: 14px;
+  }
+
+  /* Scrollbar Styling */
+  .search-page-wrapper [data-search-target="queryResults"]::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .search-page-wrapper [data-search-target="queryResults"]::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .search-page-wrapper [data-search-target="queryResults"]::-webkit-scrollbar-thumb {
+    background: #ff6b6b;
+    border-radius: 4px;
+  }
+
+  .search-page-wrapper [data-search-target="queryResults"]::-webkit-scrollbar-thumb:hover {
+    background: #ff5252;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .search-page-wrapper .container {
+      padding: 16px;
+    }
+
+    .search-page-wrapper form {
+      padding: 6px;
+    }
+
+    .search-page-wrapper input[type="text"] {
+      height: 56px;
+      font-size: 16px;
+      padding: 0 16px;
+    }
+
+    .search-page-wrapper button {
+      width: 48px;
+      height: 48px;
+      margin-right: 6px;
+    }
+
+    .search-page-wrapper #search-icon-circle {
+      width: 20px;
+      height: 20px;
+    }
+
+    .search-page-wrapper .course-result {
+      padding: 14px 20px;
+    }
+  }
+</style>
+
+<div class="search-page-wrapper">
+  <div class="container">
+    <%= form_with url: courses_path, method: :get, local: false, 
+        data: { 
+          controller: "search",
+          search_target: "form"
+        } do |f| %>
+      <div class="fx">
+        <div style="flex: 1;">
+          <%= f.text_field :query, 
+            class: "form-control",
+            placeholder: "Search for courses...",
+            data: { 
+              search_target: "input",
+              action: "input->search#updateQueryResults"
+            } %>
+        </div>
+        <button type="button" data-action="search#performSearch">
+          <div id="search-icon-circle"></div>
+          <span></span>
+        </button>
+      </div>
+      
+      <div data-search-target="queryResults" class="d-none">
+        <div data-search-target="resultsContainer" class="search-results-container"></div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
-  root "universities#map_search"
+  root "courses#search_page"
   resources :courses, only: [:index]
   resources :courses do
     get :check_index, on: :member
@@ -9,13 +9,12 @@ Rails.application.routes.draw do
       get :debug_index
     end
     collection do
+      get :search_page
       get :search
+      get :map
     end
     collection do
       get :suggest_addresses
-    end
-    collection do
-      get :map
     end
   end
   

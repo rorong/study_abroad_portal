@@ -1,5 +1,15 @@
 class CoursesController < ApplicationController
+  def search_page
+    # This is the new landing page with just the search bar
+  end
+
   def index
+    # Only show results if there's a search query
+    if params[:query].blank?
+      redirect_to search_page_courses_path
+      return
+    end
+
     # Clone the params to avoid modifying the original request params
     filtered_params = params.to_unsafe_h.except(:controller, :action)
 
