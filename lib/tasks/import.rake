@@ -8,7 +8,7 @@ namespace :import do
 
     CSV.foreach(file_path, headers: true, liberal_parsing: true).each_with_index do |row, index|
       puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#{index}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
-     break if index == 2500
+     break if index == 3500
       begin
         ActiveRecord::Base.transaction do
           default_password = BCrypt::Password.create('password123')
