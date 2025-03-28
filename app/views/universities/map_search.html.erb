@@ -1,0 +1,188 @@
+<%# Map Search Container %>
+<div class="container-fluid p-0">
+  <div class="row g-0">
+    <%# Map Section %>
+    <div class="col-md-8">
+      <div id="map" style="height: calc(100vh - 56px);"></div>
+    </div>
+
+    <%# Search Panel Section %>
+    <div class="col-md-4">
+      <div class="card h-100 rounded-0 border-0">
+        <div class="card-body p-4">
+          <h2 class="card-title mb-4">Search Universities</h2>
+          
+          <%# Search Form %>
+          <%= form_with url: map_search_universities_path, method: :get, class: "mb-4", data: { controller: "map-search", action: "change->map-search#search input->map-search#search" } do |f| %>
+            <div class="mb-3">
+              <%= f.label :query, "Search by Name or Country", class: "form-label" %>
+              <%= f.text_field :query, 
+                  value: params[:query],
+                  class: "form-control",
+                  placeholder: "Enter university name or country...",
+                  data: { map_search_target: "input" } %>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :country, "Filter by Country", class: "form-label" %>
+              <%= f.select :country,
+                  options_for_select(@available_countries, selected: params[:country]),
+                  { include_blank: "All Countries" },
+                  class: "form-select",
+                  data: { action: "change->map-search#search" } %>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :type_of_university, "Filter by Type", class: "form-label" %>
+              <%= f.select :type_of_university,
+                  options_for_select(@available_types, selected: params[:type_of_university]),
+                  { include_blank: "All Types" },
+                  class: "form-select",
+                  data: { action: "change->map-search#search" } %>
+            </div>
+
+            <%# Hidden submit button %>
+            <%= f.submit "Search", class: "d-none", data: { map_search_target: "submit" } %>
+          <% end %>
+
+          <%# Results List %>
+          <div class="mt-4">
+            <h3 class="h5 mb-3">Universities (<%= @universities.count %>)</h3>
+            <div class="list-group list-group-flush" style="max-height: calc(100vh - 400px); overflow-y: auto;">
+              <% @universities.each do |university| %>
+                <div class="list-group-item list-group-item-action" 
+                     data-lat="<%= university.latitude %>" 
+                     data-lng="<%= university.longitude %>"
+                     data-action="click->search#focusUniversity">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="mb-1"><%= university.name %></h5>
+                      <p class="mb-1 text-muted">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        <%= [university.city, university.country].compact.join(", ") %>
+                      </p>
+                    </div>
+                    <div class="text-end">
+                      <% if university.world_ranking.present? %>
+                        <span class="badge bg-primary mb-1">World Rank: <%= university.world_ranking %></span>
+                      <% end %>
+                      <% if university.qs_ranking.present? %>
+                        <span class="badge bg-success">QS Rank: <%= university.qs_ranking %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Map Initialization Script %>
+<script>
+  function initMap() {
+    console.log('Initializing map...');
+    
+    // Initialize the map
+    window.map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 2,
+      center: { lat: 0, lng: 0 },
+      mapTypeId: 'terrain'
+    });
+
+    // Initialize info window
+    window.infoWindow = new google.maps.InfoWindow();
+    window.markers = [];
+
+    // Add markers for each university
+    const universities = <%= @universities.to_json.html_safe %>;
+    console.log('Universities data:', universities);
+
+    universities.forEach(university => {
+      if (university.latitude && university.longitude) {
+        console.log(`Creating marker for ${university.name} at ${university.latitude}, ${university.longitude}`);
+        
+        const position = {
+          lat: parseFloat(university.latitude),
+          lng: parseFloat(university.longitude)
+        };
+
+        const marker = new google.maps.Marker({
+          position: position,
+          map: window.map,
+          title: university.name,
+          animation: google.maps.Animation.DROP
+        });
+
+        // Add click listener to marker
+        marker.addListener('click', () => {
+          console.log(`Marker clicked for ${university.name}`);
+          
+          // Close any open info windows
+          window.infoWindow.close();
+          
+          // Create info window content
+          const content = `
+            <div class="p-2">
+              <h5 class="mb-2">${university.name}</h5>
+              <p class="mb-1"><strong>Country:</strong> ${university.country || 'N/A'}</p>
+              <p class="mb-1"><strong>Type:</strong> ${university.type_of_university || 'N/A'}</p>
+              <p class="mb-1"><strong>Address:</strong> ${university.address || 'N/A'}</p>
+              <a href="/universities/${university.id}" class="btn btn-primary btn-sm mt-2 w-100" data-turbo="false">
+                View Details
+              </a>
+            </div>
+          `;
+          
+          // Open info window
+          window.infoWindow.setContent(content);
+          window.infoWindow.open(window.map, marker);
+          
+          // Center map on marker
+          window.map.setCenter(marker.getPosition());
+          window.map.setZoom(15);
+        });
+
+        window.markers.push(marker);
+      } else {
+        console.log(`Skipping ${university.name} - no coordinates`);
+      }
+    });
+
+    // Fit bounds to show all markers
+    if (window.markers.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      window.markers.forEach(marker => bounds.extend(marker.getPosition()));
+      window.map.fitBounds(bounds);
+    }
+  }
+</script>
+
+<%# Load Google Maps %>
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjw3HIsW8WLLriMQ_u3wQng2ggRKRP2cg&callback=initMap">
+</script>
+
+<%# Custom Styles %>
+<style>
+  .list-group-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .list-group-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .list-group-item.active {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+  }
+</style> 
