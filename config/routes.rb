@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
-  root "courses#index"
+  root "universities#map_search"
   resources :courses, only: [:index]
   resources :courses do
     get :check_index, on: :member
@@ -18,7 +18,14 @@ Rails.application.routes.draw do
       get :map
     end
   end
-  resources :universities, only: [:index, :show]
+  
+  # Define universities routes with collection action first
+  resources :universities do
+    collection do
+      get :map_search
+    end
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
