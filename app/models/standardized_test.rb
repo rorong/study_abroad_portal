@@ -27,14 +27,15 @@ class StandardizedTest < ApplicationRecord
   end
 
   # Custom search for Standardized Tests
-  def self.search_tests(query)
+  def self.search_tests(query, limit: 10)
     __elasticsearch__.search(
       query: {
         multi_match: {
           query: query,
           fields: %w[test_name exam_type]
         }
-      }
+      },
+      size: limit
     ).records
   end
 end

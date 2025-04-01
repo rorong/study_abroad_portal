@@ -48,47 +48,70 @@ class Course < ApplicationRecord
   end
 
   # Custom Search Method for Courses, Subjects, and Tests
-  def self.search_courses_and_subjects(query, min_fee: nil, max_fee: nil)
-    search_query = {
-      query: {
-        bool: {
-          must: [
-            {
-              multi_match: {
-                query: query,
-                fields: %w[name course_code level_of_course delivery_method current_status module_subjects],
-                fuzziness: 'AUTO'
+  def self.search_courses_and_subjects(query, limit: 100, min_fee: nil, max_fee: nil)
+    # First try exact match search for better performance
+    exact_courses = Course.joins(:universities)
+                         .where("courses.name ILIKE ? OR courses.title ILIKE ? OR universities.name ILIKE ?", 
+                               query, query, query)
+                         .limit(limit)
+                         .includes(:universities)
+
+    # If we don't have enough results, try fuzzy search
+    if exact_courses.count < limit
+      search_query = {
+        query: {
+          bool: {
+            must: [
+              {
+                multi_match: {
+                  query: query,
+                  fields: %w[name course_code level_of_course delivery_method current_status module_subjects],
+                  fuzziness: 'AUTO'
+                }
               }
-            }
-          ]
+            ]
+          }
+        },
+        size: limit - exact_courses.count
+      }
+    
+      # Add tuition fee range filter if present
+      if min_fee || max_fee
+        min_fee ||= 0
+        max_fee ||= Float::INFINITY
+        search_query[:query][:bool][:filter] = {
+          range: { tuition_fee_international: { gte: min_fee, lte: max_fee } }
         }
-      }
-    }
-  
-    # Add tuition fee range filter if present
-    if min_fee || max_fee
-      min_fee ||= 0
-      max_fee ||= Float::INFINITY
-      search_query[:query][:bool][:filter] = {
-        range: { tuition_fee_international: { gte: min_fee, lte: max_fee } }
-      }
+      end
+    
+      # Search in courses using Elasticsearch
+      fuzzy_courses = __elasticsearch__.search(search_query).records.includes(:universities)
+      
+      # Combine exact and fuzzy results
+      course_results = (exact_courses + fuzzy_courses).uniq
+    else
+      course_results = exact_courses
     end
-  
-    # First search in courses
-    course_results = __elasticsearch__.search(search_query).records
 
-    # Then search in universities and get associated courses
+    # Search in universities and get associated courses
     university_results = University.where("name ILIKE ?", "%#{query}%")
-    university_courses = Course.joins(:universities).where(universities: { id: university_results.pluck(:id) })
+                                 .limit(10) # Limit university results
+    university_courses = Course.joins(:universities)
+                             .where(universities: { id: university_results.pluck(:id) })
+                             .limit(limit) # Limit university courses
+                             .includes(:universities)
 
+    # Combine all results and limit to requested size
+    all_courses = (course_results + university_courses).uniq.take(limit)
+    
     # Group courses by university
-    all_courses = (course_results + university_courses).uniq
     courses_by_university = all_courses.group_by { |course| course.universities.first }
 
+    # Search subjects and tests with limits
     {
       courses_by_university: courses_by_university,
-      subjects: Subject.search_subjects(query),
-      tests: StandardizedTest.search_tests(query)
+      subjects: Subject.search_subjects(query, limit: 10),
+      tests: StandardizedTest.search_tests(query, limit: 10)
     }
   end
   

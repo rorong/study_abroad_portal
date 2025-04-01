@@ -19,14 +19,15 @@ class Subject < ApplicationRecord
       end
     end
   
-    def self.search_subjects(query)
+    def self.search_subjects(query, limit: 10)
       __elasticsearch__.search(
         query: {
           multi_match: {
             query: query,
             fields: %w[name]
           }
-        }
+        },
+        size: limit
       ).records
     end
   end
