@@ -28,9 +28,12 @@
               data-action="search#performSearch">
             <i class="fas fa-search"></i> Search
           </button>
-          <%= link_to map_courses_path, class: "btn btn-info ms-2", data: { turbo: false } do %>
+          <!-- <%= link_to map_courses_path, class: "btn btn-info ms-2", data: { turbo: false } do %>
             <i class="fas fa-map-marked-alt"></i> View Map
-          <% end %>
+          <% end %> -->
+        <%= link_to root_path, class: "btn btn-secondary ms-2", data: { turbo: false } do %>
+          <i class="fas fa-home"></i> Home
+        <% end %>
         </div>
         
         <div data-search-target="queryResults" class="d-none">

@@ -5,8 +5,11 @@
   </button>
   <div class="collapse navbar-collapse" id="navbarNav">
     <ul class="navbar-nav me-auto">
-      <li class="nav-item active">
-        <a class="nav-link" href="<%= root_path %>">Home <span class="sr-only">(current)</span></a>
+      <li class="nav-item">
+        <%= link_to 'Home', courses_path, class: "nav-link #{current_page?(courses_path) ? 'active' : ''}" %>
+      </li>
+      <li class="nav-item">
+        <%= link_to 'University Map', map_search_universities_path, class: "nav-link #{controller_name == 'universities' && action_name == 'map_search' ? 'active' : ''}" %>
       </li>
     </ul>
     <% if authenticated? %>

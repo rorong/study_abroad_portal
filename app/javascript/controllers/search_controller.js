@@ -387,11 +387,6 @@ export default class SearchController extends Controller {
   }
 
   search(event) {
-    // Don't trigger search if it's the address input and no place has been selected
-    if (event.target === this.addressInputTarget && !this.latitudeTarget.value) {
-      return;
-    }
-
     console.log("Searching...");
     clearTimeout(this.timeout);
     
@@ -493,21 +488,15 @@ export default class SearchController extends Controller {
     // Clear the search input if it exists
     if (this.hasInputTarget) {
       this.inputTarget.value = '';
-    } 
-    // Clear all select elements in the form
-    const form = this.element;
-    form.querySelectorAll('select').forEach(select => {
-      select.value = '';
-    });
-    // Clear all number inputs
-    form.querySelectorAll('input[type="number"]').forEach(input => {
-      input.value = '';
-    });
-    // Update the URL to remove all parameters
-    const baseUrl = window.location.pathname;
-    window.history.pushState({}, '', baseUrl);
-    // Submit the form to update results
-    Turbo.visit(form.action + '?' + new URLSearchParams(new FormData(form)), { action: "replace" });
+    }
+    // Hide the results container
+    if (this.hasQueryResultsTarget) {
+      this.queryResultsTarget.classList.add('d-none');
+    }
+    // Clear the results container
+    if (this.hasResultsContainerTarget) {
+      this.resultsContainerTarget.innerHTML = '';
+    }
   }
 
   handleAddressKeydown(event) {
