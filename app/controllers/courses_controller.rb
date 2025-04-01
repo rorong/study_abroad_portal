@@ -23,7 +23,17 @@ class CoursesController < ApplicationController
       :course_requirement,
       :course_test_requirements,
       :course_subject_requirements
-    )
+    ).select(
+      'courses.*, 
+       universities.name as university_name,
+       universities.world_ranking,
+       universities.qs_ranking,
+       universities.national_ranking,
+       universities.type_of_university,
+       universities.country,
+       universities.latitude,
+       universities.longitude'
+    ).joins(:universities)
 
     # Apply search query if present
     if params[:query].present?
@@ -54,7 +64,7 @@ class CoursesController < ApplicationController
     end
 
     if filtered_params[:title].present?
-      conditions << "courses.title LIKE ?"
+      conditions << "courses.title ILIKE ?"
       condition_params << "%#{filtered_params[:title]}%"
     end
 
@@ -102,8 +112,7 @@ class CoursesController < ApplicationController
     end
 
     if filtered_params[:type_of_university].present?
-      @courses = @courses.joins(:universities)
-                        .where(universities: { type_of_university: filtered_params[:type_of_university] })
+      @courses = @courses.where(universities: { type_of_university: filtered_params[:type_of_university] })
     end
 
     # Handle distance-based filtering with optimized query
@@ -112,14 +121,13 @@ class CoursesController < ApplicationController
       lng = filtered_params[:longitude].to_f
       distance = 50 # 50 km radius
       
-      @courses = @courses.joins(:universities)
-                        .where("(
-                          6371 * acos(
-                            cos(radians(?)) * cos(radians(universities.lat)) *
-                            cos(radians(universities.long) - radians(?)) +
-                            sin(radians(?)) * sin(radians(universities.lat))
-                          )
-                        ) <= ?", lat, lng, lat, distance)
+      @courses = @courses.where("(
+        6371 * acos(
+          cos(radians(?)) * cos(radians(universities.latitude)) *
+          cos(radians(universities.longitude) - radians(?)) +
+          sin(radians(?)) * sin(radians(universities.latitude))
+        )
+      ) <= ?", lat, lng, lat, distance)
     end
 
     # Handle ranges with optimized queries
@@ -143,40 +151,34 @@ class CoursesController < ApplicationController
 
     # Handle university filters
     if filtered_params[:university_id].present?
-      @courses = @courses.joins(:universities)
-                        .where(universities: { id: filtered_params[:university_id] })
+      @courses = @courses.where(universities: { id: filtered_params[:university_id] })
     end
 
     if filtered_params[:university_country].present?
-      @courses = @courses.joins(:universities)
-                        .where(universities: { country: filtered_params[:university_country] })
+      @courses = @courses.where(universities: { country: filtered_params[:university_country] })
     end
 
     if filtered_params[:university_address].present? && !filtered_params[:latitude].present?
-      @courses = @courses.joins(:universities)
-                        .where('universities.address LIKE ?', "%#{filtered_params[:university_address]}%")
+      @courses = @courses.where('universities.address ILIKE ?', "%#{filtered_params[:university_address]}%")
     end
 
     # Handle ranking filters with optimized queries
     if filtered_params[:min_world_ranking].present? || filtered_params[:max_world_ranking].present?
       min_rank = filtered_params[:min_world_ranking].present? ? filtered_params[:min_world_ranking].to_i : 0
       max_rank = filtered_params[:max_world_ranking].present? ? filtered_params[:max_world_ranking].to_i : Float::INFINITY
-      @courses = @courses.joins(:universities)
-                        .where(universities: { world_ranking: min_rank..max_rank })
+      @courses = @courses.where(universities: { world_ranking: min_rank..max_rank })
     end
 
     if filtered_params[:min_qs_ranking].present? || filtered_params[:max_qs_ranking].present?
       min_rank = filtered_params[:min_qs_ranking].present? ? filtered_params[:min_qs_ranking].to_i : 0
       max_rank = filtered_params[:max_qs_ranking].present? ? filtered_params[:max_qs_ranking].to_i : Float::INFINITY
-      @courses = @courses.joins(:universities)
-                        .where(universities: { qs_ranking: min_rank..max_rank })
+      @courses = @courses.where(universities: { qs_ranking: min_rank..max_rank })
     end
 
     if filtered_params[:min_national_ranking].present? || filtered_params[:max_national_ranking].present?
       min_rank = filtered_params[:min_national_ranking].present? ? filtered_params[:min_national_ranking].to_i : 0
       max_rank = filtered_params[:max_national_ranking].present? ? filtered_params[:max_national_ranking].to_i : Float::INFINITY
-      @courses = @courses.joins(:universities)
-                        .where(universities: { national_ranking: min_rank..max_rank })
+      @courses = @courses.where(universities: { national_ranking: min_rank..max_rank })
     end
 
     if filtered_params[:min_tuition_fee].present? || filtered_params[:max_tuition_fee].present?
@@ -211,15 +213,15 @@ class CoursesController < ApplicationController
       filtered_course_ids = @courses.pluck(:id)
       @available_institutions = Institution.joins(:courses)
                                         .where(courses: { id: filtered_course_ids })
-                                        .distinct
+                                        .select('DISTINCT institutions.*')
       
       @available_departments = Department.joins(:courses)
                                        .where(courses: { id: filtered_course_ids })
-                                       .distinct
+                                       .select('DISTINCT departments.*')
       
       @available_universities = University.joins(:courses)
                                         .where(courses: { id: filtered_course_ids })
-                                        .distinct
+                                        .select('DISTINCT universities.*')
       
       @available_university_countries = University.joins(:courses)
                                                 .where(courses: { id: filtered_course_ids })
@@ -242,16 +244,16 @@ class CoursesController < ApplicationController
       
       @available_tags = Tag.joins(:courses)
                           .where(courses: { id: filtered_course_ids })
-                          .distinct
+                          .select('DISTINCT tags.*')
       
       @available_education_boards = EducationBoard.joins(:courses)
                                                 .where(courses: { id: filtered_course_ids })
-                                                .distinct
+                                                .select('DISTINCT education_boards.*')
     else
       # If no filters are active, get all available options with optimized queries
-      @available_institutions = Institution.joins(:courses).distinct
-      @available_departments = Department.joins(:courses).distinct
-      @available_universities = University.joins(:courses).distinct
+      @available_institutions = Institution.joins(:courses).select('DISTINCT institutions.*')
+      @available_departments = Department.joins(:courses).select('DISTINCT departments.*')
+      @available_universities = University.joins(:courses).select('DISTINCT universities.*')
       @available_university_countries = University.distinct.pluck(:country).compact
       @available_university_types = University.distinct.pluck(:type_of_university).compact
       @available_intakes = Course.distinct.pluck(:intake).compact
@@ -260,8 +262,8 @@ class CoursesController < ApplicationController
       @available_durations = Course.distinct.pluck(:course_duration).compact
       @available_levels = Course.distinct.pluck(:level_of_course).compact
       @available_application_fees = Course.distinct.pluck(:application_fee).compact
-      @available_tags = Tag.joins(:courses).distinct
-      @available_education_boards = EducationBoard.joins(:courses).distinct
+      @available_tags = Tag.joins(:courses).select('DISTINCT tags.*')
+      @available_education_boards = EducationBoard.joins(:courses).select('DISTINCT education_boards.*')
     end
 
     # Group courses by university with optimized query
@@ -271,8 +273,7 @@ class CoursesController < ApplicationController
         courses.select { |course| filtered_course_ids.include?(course.id) }
       end.reject { |_, courses| courses.empty? }
     else
-      @courses_by_university = @courses.joins(:universities)
-                                     .group_by { |course| course.universities.first }
+      @courses_by_university = @courses.group_by { |course| course.universities.first }
                                      .reject { |_, courses| courses.empty? }
     end
 
@@ -298,12 +299,16 @@ class CoursesController < ApplicationController
   end
 
   def show
-    @course = Course.find(params[:id])
-    @universities = @course.universities
-    @institution = @course.institution
-    @department = @course.department
-    @tags = @course.tags
-    @education_board = @course.education_board
+    @course = Course.includes(
+      :universities,
+      :institution,
+      :department,
+      :tags,
+      :education_board,
+      :course_requirement,
+      :course_test_requirements,
+      :course_subject_requirements
+    ).find(params[:id])
   end
 
   def search
@@ -328,9 +333,7 @@ class CoursesController < ApplicationController
 
   def map
     @universities = University.where.not(latitude: nil, longitude: nil)
+                            .select(:id, :name, :latitude, :longitude)
     Rails.logger.info "Found #{@universities.count} universities with coordinates"
-    @universities.each do |u|
-      Rails.logger.info "University: #{u.name}, Lat: #{u.latitude}, Long: #{u.longitude}"
-    end
   end
 end
