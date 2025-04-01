@@ -508,5 +508,34 @@ export default class SearchController extends Controller {
       }
     }
   }
+
+  handleSort(event) {
+    event.preventDefault();
+    const form = event.target.closest('form');
+    if (form) {
+      // Create a new FormData object from the form
+      const formData = new FormData(form);
+      
+      // Get all current URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Create a new URLSearchParams object to store unique parameters
+      const uniqueParams = new URLSearchParams();
+      
+      // Add all URL parameters to uniqueParams, ensuring no duplicates
+      for (const [key, value] of urlParams.entries()) {
+        if (!uniqueParams.has(key)) {
+          uniqueParams.append(key, value);
+        }
+      }
+      
+      // Update the sort parameter
+      uniqueParams.set('sort', formData.get('sort'));
+      
+      // Submit the form with the unique parameters
+      const url = form.action + '?' + uniqueParams.toString();
+      window.location.href = url;
+    }
+  }
 }
  

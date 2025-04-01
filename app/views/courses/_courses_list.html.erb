@@ -156,13 +156,35 @@
     </div>
   <% end %>
 
-  <div class="mb-3">
-    <h5 class="text-dark">
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <h5 class="text-dark mb-0">
       <% if params[:query].present? %>
         Showing matches for "<span class="text-primary fw-bold"><%= params[:query] %></span>":
       <% end %>
       <span id="course_count" class="fw-bold"><%= course_count %> Courses found</span>
     </h5>
+    
+    <%= form_tag courses_path, method: :get, class: "d-flex align-items-center", data: { turbo: true } do %>
+      <%# Preserve all existing query parameters %>
+      <% query_params.each do |key, value| %>
+        <%= hidden_field_tag key, value unless key == 'sort' %>
+      <% end %>
+      
+      <label class="me-2 text-muted">Sort by:</label>
+      <%= select_tag :sort, 
+          options_for_select([
+            ['Default', ''],
+            ['Application Fee (Low to High)', 'application_fee_asc'],
+            ['Application Fee (High to Low)', 'application_fee_desc'],
+            ['Tuition Fee (Low to High)', 'tuition_fee_asc'],
+            ['Tuition Fee (High to Low)', 'tuition_fee_desc'],
+            ['Course Duration (Short to Long)', 'course_duration_asc'],
+            ['Course Duration (Long to Short)', 'course_duration_desc']
+          ], params[:sort]),
+          class: "form-select form-select-sm",
+          style: "width: auto;",
+          data: { action: "change->search#handleSort" } %>
+    <% end %>
   </div>
 
   <% if courses.any? %>

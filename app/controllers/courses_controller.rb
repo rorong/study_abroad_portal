@@ -104,20 +104,98 @@ class CoursesController < ApplicationController
       @courses = @courses.joins(:universities).where(universities: { national_ranking: min_rank..max_rank })
     end
     
+    # Handle tuition fee range
     if filtered_params[:min_tuition_fee].present? || filtered_params[:max_tuition_fee].present?
       min_fee = filtered_params[:min_tuition_fee].present? ? filtered_params[:min_tuition_fee].to_f : 0
       max_fee = filtered_params[:max_tuition_fee].present? ? filtered_params[:max_tuition_fee].to_f : Float::INFINITY
       @courses = @courses.where(tuition_fee_international: min_fee..max_fee)
     end
-    
-    if params[:sort_by] == "tuition_fee_asc"
-      @courses = @courses.order(tuition_fee_international: :asc)
-    elsif params[:sort_by] == "tuition_fee_desc"
-      @courses = @courses.order(tuition_fee_international: :desc)
-    elsif params[:sort_by] == "application_fee_asc"
-      @courses = @courses.order(application_fee: :asc)
-    elsif params[:sort_by] == "application_fee_desc"
-      @courses = @courses.order(application_fee: :desc)
+
+    # Apply sorting if specified
+    if filtered_params[:sort].present?
+      case filtered_params[:sort]
+      when 'application_fee_asc'
+        if params[:query].present?
+          # For search results, sort the courses first
+          sorted_courses = @courses_by_university.values.flatten.sort_by { |course| course.application_fee || Float::INFINITY }
+          # Then regroup by university while maintaining the sort order
+          @courses_by_university = sorted_courses.group_by { |course| course.universities.first }
+          # Update the main courses query to match the sorted order with eager loading
+          @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                         .where(id: sorted_courses.map(&:id))
+        else
+          @courses = @courses.order(application_fee: :asc)
+          @courses_by_university = @courses.group_by { |course| course.universities.first }
+        end
+      when 'application_fee_desc'
+        if params[:query].present?
+          # For search results, sort the courses first
+          sorted_courses = @courses_by_university.values.flatten.sort_by { |course| course.application_fee || Float::INFINITY }.reverse
+          # Then regroup by university while maintaining the sort order
+          @courses_by_university = sorted_courses.group_by { |course| course.universities.first }
+          # Update the main courses query to match the sorted order with eager loading
+          @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                         .where(id: sorted_courses.map(&:id))
+        else
+          @courses = @courses.order(application_fee: :desc)
+          @courses_by_university = @courses.group_by { |course| course.universities.first }
+        end
+      when 'tuition_fee_asc'
+        if params[:query].present?
+          # For search results, sort the courses first
+          sorted_courses = @courses_by_university.values.flatten.sort_by { |course| course.tuition_fee_international || Float::INFINITY }
+          # Then regroup by university while maintaining the sort order
+          @courses_by_university = sorted_courses.group_by { |course| course.universities.first }
+          # Update the main courses query to match the sorted order with eager loading
+          @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                         .where(id: sorted_courses.map(&:id))
+        else
+          @courses = @courses.order(tuition_fee_international: :asc)
+          @courses_by_university = @courses.group_by { |course| course.universities.first }
+        end
+      when 'tuition_fee_desc'
+        if params[:query].present?
+          # For search results, sort the courses first
+          sorted_courses = @courses_by_university.values.flatten.sort_by { |course| course.tuition_fee_international || Float::INFINITY }.reverse
+          # Then regroup by university while maintaining the sort order
+          @courses_by_university = sorted_courses.group_by { |course| course.universities.first }
+          # Update the main courses query to match the sorted order with eager loading
+          @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                         .where(id: sorted_courses.map(&:id))
+        else
+          @courses = @courses.order(tuition_fee_international: :desc)
+          @courses_by_university = @courses.group_by { |course| course.universities.first }
+        end
+      when 'course_duration_asc'
+        if params[:query].present?
+          # For search results, sort the courses first
+          sorted_courses = @courses_by_university.values.flatten.sort_by { |course| course.course_duration.to_i }
+          # Then regroup by university while maintaining the sort order
+          @courses_by_university = sorted_courses.group_by { |course| course.universities.first }
+          # Update the main courses query to match the sorted order with eager loading
+          @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                         .where(id: sorted_courses.map(&:id))
+        else
+          @courses = @courses.order(course_duration: :asc)
+          @courses_by_university = @courses.group_by { |course| course.universities.first }
+        end
+      when 'course_duration_desc'
+        if params[:query].present?
+          # For search results, sort the courses first
+          sorted_courses = @courses_by_university.values.flatten.sort_by { |course| course.course_duration.to_i }.reverse
+          # Then regroup by university while maintaining the sort order
+          @courses_by_university = sorted_courses.group_by { |course| course.universities.first }
+          # Update the main courses query to match the sorted order with eager loading
+          @courses = Course.includes(:universities, :institution, :department, :tags, :education_board)
+                         .where(id: sorted_courses.map(&:id))
+        else
+          @courses = @courses.order(course_duration: :desc)
+          @courses_by_university = @courses.group_by { |course| course.universities.first }
+        end
+      end
+    elsif !params[:query].present?
+      # If no sorting and no search query, group courses by university
+      @courses_by_university = @courses.group_by { |course| course.universities.first }
     end
 
     # Get total count for pagination without loading all records
@@ -159,12 +237,12 @@ class CoursesController < ApplicationController
                                                 .pluck(:type_of_university)
                                                 .compact
       
-      @available_intakes = @courses.distinct.pluck(:intake).compact
-      @available_statuses = @courses.distinct.pluck(:current_status).compact
-      @available_delivery_methods = @courses.distinct.pluck(:delivery_method).compact
-      @available_durations = @courses.distinct.pluck(:course_duration).compact
-      @available_levels = @courses.distinct.pluck(:level_of_course).compact
-      @available_application_fees = @courses.distinct.pluck(:application_fee).compact
+      @available_intakes = Course.where(id: filtered_course_ids).distinct.pluck(:intake).compact
+      @available_statuses = Course.where(id: filtered_course_ids).distinct.pluck(:current_status).compact
+      @available_delivery_methods = Course.where(id: filtered_course_ids).distinct.pluck(:delivery_method).compact
+      @available_durations = Course.where(id: filtered_course_ids).distinct.pluck(:course_duration).compact
+      @available_levels = Course.where(id: filtered_course_ids).distinct.pluck(:level_of_course).compact
+      @available_application_fees = Course.where(id: filtered_course_ids).distinct.pluck(:application_fee).compact
       
       @available_tags = Tag.joins(:courses)
                           .where(courses: { id: filtered_course_ids })

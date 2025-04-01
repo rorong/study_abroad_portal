@@ -17,5 +17,14 @@
 <% end %>
 
 <%= turbo_stream.replace "courses_list" do %>
-  <%= render "courses_list", courses: @courses, subjects: @subjects, tests: @tests %>
+  <%= render "courses_list", 
+      courses: @courses, 
+      courses_by_university: @courses_by_university,
+      subjects: @subjects, 
+      tests: @tests,
+      institutions: @available_institutions,
+      departments: @available_departments,
+      universities: @available_universities,
+      tags: @available_tags,
+      course_count: @course_count %>
 <% end %> 
