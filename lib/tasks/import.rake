@@ -11,26 +11,24 @@ namespace :import do
      break if index == 2500
       begin
         ActiveRecord::Base.transaction do
-          default_password = BCrypt::Password.create('password123')
-
           # Find or create owner user
           owner = User.find_or_initialize_by(record_id: row["Record Id"]) do |user|
-            user.email_address = (row['Email'] || row['Secondary Email'] || "user_#{row['Course Owner.id']}@example.com")
+            user.email = (row['Email'] || row['Secondary Email'] || "user_#{row['Course Owner.id']}@example.com")
             user.email_opt_out = row['Email Opt Out'] == 'true'
-            user.password_digest = default_password
+            user.password = 'password123' # Devise will handle password encryption
           end
           owner.save(validate: false) if owner.new_record?
 
           # Find or create creator and modifier users
           creator = User.find_or_initialize_by(record_id: row["Created By.id"]) do |user|
-            user.email_address = "user_#{row['Created By.id']}@example.com"
-            user.password_digest = default_password
+            user.email = "user_#{row['Created By.id']}@example.com"
+            user.password = 'password123' # Devise will handle password encryption
           end
           creator.save(validate: false) if creator.new_record?
           
           modifier = User.find_or_initialize_by(record_id: row["Modified By.id"]) do |user|
-            user.email_address = "user_#{row['Modified By.id']}@example.com"
-            user.password_digest = default_password
+            user.email = "user_#{row['Modified By.id']}@example.com"
+            user.password = 'password123' # Devise will handle password encryption
           end
           modifier.save(validate: false) if modifier.new_record?
 

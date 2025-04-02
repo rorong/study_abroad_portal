@@ -66,3 +66,5 @@ gem 'elasticsearch-model'
 gem 'elasticsearch-rails'
 gem 'kaminari'
 gem 'httparty'
+gem "devise", "~> 4.9"
+

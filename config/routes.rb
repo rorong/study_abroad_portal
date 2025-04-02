@@ -1,6 +1,5 @@
 Rails.application.routes.draw do
-  resource :session
-  resources :passwords, param: :token
+  devise_for :users
   root "courses#search_page"
   resources :courses, only: [:index]
   resources :courses do

@@ -1,16 +1,14 @@
 class User < ApplicationRecord
-  self.primary_key = 'id'
-  has_secure_password
-  has_many :sessions, dependent: :destroy
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :validatable
 
-  normalizes :email_address, with: ->(e) { e.strip.downcase }
+  self.primary_key = 'id'
+  
+  normalizes :email, with: ->(e) { e.strip.downcase }
 
   # validates :email_address, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   # validates :password, presence: true, on: :create
-
-  # Generate password reset token
-  def generate_token_for(purpose)
-    signed_id expires_in: 15.minutes, purpose: purpose
-  end
 end
 

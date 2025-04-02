@@ -12,13 +12,10 @@
         <%= link_to 'University Map', map_search_universities_path, class: "nav-link #{controller_name == 'universities' && action_name == 'map_search' ? 'active' : ''}" %>
       </li>
     </ul>
-    <% if authenticated? %>
+    <% if current_user.present? %>
       <ul class="navbar-nav">
         <li class="nav-item">
-          <%= button_to 'Logout', session_path,
-              method: :delete,
-              class: "btn btn-outline-light mr-5",
-              data: { turbo: false } %>
+          <%= button_to 'Logout', destroy_user_session_path, method: :delete, class: "btn btn-outline-light mr-5" %>
         </li>
       </ul>
     <% end %>
