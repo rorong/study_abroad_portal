@@ -5,31 +5,55 @@ export default class MapSearchController extends Controller {
 
   connect() {
     console.log("Map search controller connected")
-    this.searchDebounced = this.debounce(this.performSearch.bind(this), 300)
+    this.initializePlacesAutocomplete()
   }
 
-  // Debounce helper function
-  debounce(func, wait) {
-    let timeout
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout)
-        func(...args)
+  initializePlacesAutocomplete() {
+    const input = this.inputTarget
+    
+    // Initialize Google Places Autocomplete
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      types: ['establishment', 'geocode']
+    })
+
+    // Handle place selection
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace()
+      if (place.geometry) {
+        // Update form with selected location
+        input.value = place.formatted_address
+        
+        // Add hidden fields for lat/lng
+        let latInput = document.getElementById('lat')
+        let lngInput = document.getElementById('lng')
+        
+        if (!latInput) {
+          latInput = document.createElement('input')
+          latInput.type = 'hidden'
+          latInput.id = 'lat'
+          latInput.name = 'lat'
+          this.element.appendChild(latInput)
+        }
+        
+        if (!lngInput) {
+          lngInput = document.createElement('input')
+          lngInput.type = 'hidden'
+          lngInput.id = 'lng'
+          lngInput.name = 'lng'
+          this.element.appendChild(lngInput)
+        }
+        
+        latInput.value = place.geometry.location.lat()
+        lngInput.value = place.geometry.location.lng()
+        
+        // Perform search with new coordinates
+        this.performSearch()
       }
-      clearTimeout(timeout)
-      timeout = setTimeout(later, wait)
-    }
+    })
   }
 
-  search(event) {
-    event.preventDefault()
-    this.searchDebounced(event)
-  }
-
-  performSearch(event) {
-    const form = event.target.closest('form')
-    if (!form) return
-
+  performSearch() {
+    const form = this.element
     const formData = new FormData(form)
     
     // Update URL with search parameters
@@ -79,7 +103,7 @@ export default class MapSearchController extends Controller {
     if (!listContainer) return
 
     if (universities.length === 0) {
-      listContainer.innerHTML = '<div class="text-center p-4 text-muted">No universities found matching your criteria.</div>'
+      listContainer.innerHTML = '<div class="text-center p-4 text-muted">No universities found within 50km of this location.</div>'
       return
     }
 

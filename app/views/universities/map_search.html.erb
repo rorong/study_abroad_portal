@@ -13,32 +13,14 @@
           <h2 class="card-title mb-4">Search Universities</h2>
           
           <%# Search Form %>
-          <%= form_with url: map_search_universities_path, method: :get, class: "mb-4", data: { controller: "map-search", action: "change->map-search#search input->map-search#search" } do |f| %>
+          <%= form_with url: map_search_universities_path, method: :get, class: "mb-4", data: { controller: "map-search" } do |f| %>
             <div class="mb-3">
-              <%= f.label :query, "Search by Name or Country", class: "form-label" %>
+              <%= f.label :query, "Search by Location", class: "form-label" %>
               <%= f.text_field :query, 
                   value: params[:query],
                   class: "form-control",
-                  placeholder: "Enter university name or country...",
+                  placeholder: "Enter a location (e.g. Sydney Cricket Ground)...",
                   data: { map_search_target: "input" } %>
-            </div>
-
-            <div class="mb-3">
-              <%= f.label :country, "Filter by Country", class: "form-label" %>
-              <%= f.select :country,
-                  options_for_select(@available_countries, selected: params[:country]),
-                  { include_blank: "All Countries" },
-                  class: "form-select",
-                  data: { action: "change->map-search#search" } %>
-            </div>
-
-            <div class="mb-3">
-              <%= f.label :type_of_university, "Filter by Type", class: "form-label" %>
-              <%= f.select :type_of_university,
-                  options_for_select(@available_types, selected: params[:type_of_university]),
-                  { include_blank: "All Types" },
-                  class: "form-select",
-                  data: { action: "change->map-search#search" } %>
             </div>
 
             <%# Hidden submit button %>
@@ -53,7 +35,7 @@
                 <div class="list-group-item list-group-item-action" 
                      data-lat="<%= university.latitude %>" 
                      data-lng="<%= university.longitude %>"
-                     data-action="click->search#focusUniversity">
+                     data-action="click->map-search#focusUniversity">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="mb-1"><%= university.name %></h5>
@@ -163,7 +145,7 @@
 
 <%# Load Google Maps %>
 <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjw3HIsW8WLLriMQ_u3wQng2ggRKRP2cg&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjw3HIsW8WLLriMQ_u3wQng2ggRKRP2cg&libraries=places&callback=initMap">
 </script>
 
 <%# Custom Styles %>
