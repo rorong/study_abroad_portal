@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class MapSearchController extends Controller {
-  static targets = ["input", "form"]
+  static targets = ["input", "form", "autocomplete"]
 
   connect() {
     console.log("Map search controller connected")
@@ -11,7 +11,7 @@ export default class MapSearchController extends Controller {
   initializePlacesAutocomplete() {
     const input = this.inputTarget
     
-    // Initialize Google Places Autocomplete
+    // Initialize Google Places Autocomplete with worldwide suggestions
     const autocomplete = new google.maps.places.Autocomplete(input, {
       types: ['establishment', 'geocode']
     })
