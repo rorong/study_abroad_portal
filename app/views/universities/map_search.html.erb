@@ -13,20 +13,24 @@
           <h2 class="card-title mb-4">Search Universities</h2>
           
           <%# Search Form %>
-          <%= form_with url: map_search_universities_path, method: :get, class: "mb-4", data: { map_search_target: "form" } do |f| %>
-            <div class="mb-3">
-              <%= f.label :query, "Search by Location", class: "form-label" %>
-              <%= f.text_field :query, 
-                  value: params[:query],
-                  class: "form-control",
-                  placeholder: "Enter a location (e.g. Sydney Cricket Ground)...",
-                  data: { map_search_target: "input" } %>
-            </div>
+          <div class="d-flex gap-2">
+            <%= form_with url: map_search_universities_path, method: :get, class: "flex-grow-1", data: { map_search_target: "form" } do |f| %>
+              <div class="mb-3">
+                <%= f.label :query, "Search by Location", class: "form-label" %>
+                <%= f.text_field :query, 
+                    value: params[:query],
+                    class: "form-control",
+                    placeholder: "Enter a location (e.g. Sydney Cricket Ground)...",
+                    data: { map_search_target: "input" } %>
+              </div>
 
-            <%# Hidden submit button %>
-            <%= f.submit "Search", class: "d-none", data: { map_search_target: "submit" } %>
-          <% end %>
-
+              <%# Hidden submit button %>
+              <%= f.submit "Search", class: "d-none", data: { map_search_target: "submit" } %>
+            <% end %>
+            <%= link_to 'All', map_search_universities_path, 
+                class: "btn btn-primary align-self-end mb-3", 
+                data: { turbo: false } %>
+          </div>
           <%# Results List %>
           <div class="mt-4">
             <h3 class="h5 mb-3">Universities (<%= @universities.length %>)</h3>
