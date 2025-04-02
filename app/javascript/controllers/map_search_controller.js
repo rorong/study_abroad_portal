@@ -1,11 +1,204 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class MapSearchController extends Controller {
-  static targets = ["input", "form", "autocomplete"]
+  static targets = ["input", "form", "autocomplete", "map"]
+  static values = {
+    universities: Array
+  }
 
   connect() {
     console.log("Map search controller connected")
-    this.initializePlacesAutocomplete()
+    this.initializeGoogleMaps()
+  }
+
+  disconnect() {
+    // Clean up when the controller is disconnected
+    if (window.markers) {
+      window.markers.forEach(marker => marker.setMap(null))
+      window.markers = []
+    }
+    if (window.markerCluster) {
+      window.markerCluster.clearMarkers()
+      window.markerCluster = null
+    }
+    if (window.infoWindow) {
+      window.infoWindow.close()
+      window.infoWindow = null
+    }
+  }
+
+  initializeGoogleMaps() {
+    // Wait for Google Maps to be ready
+    if (typeof google !== 'undefined' && google.maps) {
+      this.initializeMap()
+      this.initializePlacesAutocomplete()
+    } else {
+      window.addEventListener('google-maps-ready', () => {
+        this.initializeMap()
+        this.initializePlacesAutocomplete()
+      })
+    }
+  }
+
+  initializeMap() {
+    try {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search)
+      const lat = urlParams.get('lat') ? parseFloat(urlParams.get('lat')) : null
+      const lng = urlParams.get('lng') ? parseFloat(urlParams.get('lng')) : null
+
+      // Initialize the map
+      window.map = new google.maps.Map(this.mapTarget, {
+        zoom: lat && lng ? 10 : 2,
+        center: lat && lng ? 
+          { lat: lat, lng: lng } : 
+          { lat: 20, lng: 0 },
+        mapTypeId: 'terrain',
+        minZoom: 2
+      })
+
+      // Initialize info window
+      window.infoWindow = new google.maps.InfoWindow()
+      window.markers = []
+
+      // Add markers for initial universities
+      if (this.universitiesValue && this.universitiesValue.length > 0) {
+        this.addMarkersToMap(this.universitiesValue)
+      }
+    } catch (error) {
+      console.error('Error initializing map:', error)
+    }
+  }
+
+  addMarkersToMap(universities) {
+    try {
+      // Clear existing markers
+      if (window.markers) {
+        window.markers.forEach(marker => marker.setMap(null))
+        window.markers = []
+      }
+
+      if (!universities || !Array.isArray(universities)) {
+        console.error('Invalid universities data:', universities)
+        return
+      }
+
+      universities.forEach(university => {
+        if (university.latitude && university.longitude) {
+          const lat = parseFloat(university.latitude)
+          const lng = parseFloat(university.longitude)
+
+          // Validate coordinates
+          if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            console.warn('Invalid coordinates for university:', university.name, lat, lng)
+            return
+          }
+
+          const position = {
+            lat: lat,
+            lng: lng
+          }
+
+          const marker = new google.maps.Marker({
+            position: position,
+            map: window.map,
+            title: university.name,
+            animation: google.maps.Animation.DROP
+          })
+
+          marker.addListener('click', () => {
+            if (window.infoWindow) {
+              window.infoWindow.close()
+            }
+
+            const content = `
+              <div class="p-2">
+                <h5 class="mb-2">${university.name}</h5>
+                <p class="mb-1"><strong>Country:</strong> ${university.country || 'N/A'}</p>
+                <p class="mb-1"><strong>Type:</strong> ${university.type_of_university || 'N/A'}</p>
+                <p class="mb-1"><strong>Address:</strong> ${university.address || 'N/A'}</p>
+                <a href="/universities/${university.id}" class="btn btn-primary btn-sm mt-2 w-100" data-turbo="false">
+                  View Details
+                </a>
+              </div>
+            `
+
+            window.infoWindow.setContent(content)
+            window.infoWindow.open(window.map, marker)
+
+            window.map.setCenter(marker.getPosition())
+            window.map.setZoom(15)
+          })
+
+          window.markers.push(marker)
+        }
+      })
+
+      // Initialize clustering if we have markers
+      if (window.markers && window.markers.length > 0) {
+        if (window.markerCluster) {
+          window.markerCluster.clearMarkers()
+        }
+
+        window.markerCluster = new MarkerClusterer(window.map, window.markers, {
+          gridSize: 60,
+          maxZoom: 15,
+          minimumClusterSize: 2,
+          imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+          styles: [
+            {
+              textColor: 'black',
+              url: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m1.png',
+              height: 53,
+              width: 53,
+              textSize: 16,
+              fontWeight: 'bold',
+              anchorText: [27, 27],
+              anchorIcon: [27, 27]
+            },
+            {
+              textColor: 'black',
+              url: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m2.png',
+              height: 56,
+              width: 56,
+              textSize: 16,
+              fontWeight: 'bold',
+              anchorText: [28, 28],
+              anchorIcon: [28, 28]
+            },
+            {
+              textColor: 'black',
+              url: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m3.png',
+              height: 66,
+              width: 66,
+              textSize: 16,
+              fontWeight: 'bold',
+              anchorText: [33, 33],
+              anchorIcon: [33, 33]
+            }
+          ]
+        })
+
+        // Fit bounds to show all markers
+        const bounds = new google.maps.LatLngBounds()
+        window.markers.forEach(marker => bounds.extend(marker.getPosition()))
+        window.map.fitBounds(bounds)
+
+        // Handle zoom level based on search parameters
+        const urlParams = new URLSearchParams(window.location.search)
+        const lat = urlParams.get('lat') ? parseFloat(urlParams.get('lat')) : null
+        const lng = urlParams.get('lng') ? parseFloat(urlParams.get('lng')) : null
+        
+        if (lat && lng) {
+          window.map.setCenter({ lat: lat, lng: lng })
+          window.map.setZoom(10)
+        } else if (window.map.getZoom() > 15) {
+          window.map.setZoom(15)
+        }
+      }
+    } catch (error) {
+      console.error('Error adding markers to map:', error)
+    }
   }
 
   initializePlacesAutocomplete() {
@@ -32,7 +225,7 @@ export default class MapSearchController extends Controller {
           latInput.type = 'hidden'
           latInput.id = 'lat'
           latInput.name = 'lat'
-          this.element.appendChild(latInput)
+          this.formTarget.appendChild(latInput)
         }
         
         if (!lngInput) {
@@ -40,7 +233,7 @@ export default class MapSearchController extends Controller {
           lngInput.type = 'hidden'
           lngInput.id = 'lng'
           lngInput.name = 'lng'
-          this.element.appendChild(lngInput)
+          this.formTarget.appendChild(lngInput)
         }
         
         latInput.value = place.geometry.location.lat()
@@ -53,7 +246,9 @@ export default class MapSearchController extends Controller {
   }
 
   performSearch() {
-    const form = this.element
+    const form = this.formTarget
+    if (!form) return
+
     const formData = new FormData(form)
     
     // Update URL with search parameters
@@ -81,7 +276,7 @@ export default class MapSearchController extends Controller {
       this.updateUniversityList(data.universities)
       
       // Update the map markers
-      this.updateMapMarkers(data.universities)
+      this.addMarkersToMap(data.universities)
       
       // Update the count
       const countElement = document.querySelector('.h5.mb-3')
@@ -127,74 +322,6 @@ export default class MapSearchController extends Controller {
         </div>
       </div>
     `).join('')
-  }
-
-  updateMapMarkers(universities) {
-    // Clear existing markers
-    if (window.markers) {
-      window.markers.forEach(marker => marker.setMap(null))
-      window.markers = []
-    }
-
-    // Create new markers for filtered universities
-    universities.forEach(university => {
-      if (university.latitude && university.longitude) {
-        const position = {
-          lat: parseFloat(university.latitude),
-          lng: parseFloat(university.longitude)
-        }
-
-        const marker = new google.maps.Marker({
-          position: position,
-          map: window.map,
-          title: university.name,
-          animation: google.maps.Animation.DROP
-        })
-
-        // Add click listener to marker
-        marker.addListener('click', () => {
-          // Close any open info windows
-          if (window.infoWindow) {
-            window.infoWindow.close()
-          }
-          
-          // Create info window content
-          const content = `
-            <div class="p-2">
-              <h5 class="mb-2">${university.name}</h5>
-              <p class="mb-1"><strong>Country:</strong> ${university.country || 'N/A'}</p>
-              <p class="mb-1"><strong>Type:</strong> ${university.type_of_university || 'N/A'}</p>
-              <p class="mb-1"><strong>Address:</strong> ${university.address || 'N/A'}</p>
-              <a href="/universities/${university.id}" class="btn btn-primary btn-sm mt-2 w-100" data-turbo="false">
-                View Details
-              </a>
-            </div>
-          `
-          
-          // Open info window
-          window.infoWindow.setContent(content)
-          window.infoWindow.open(window.map, marker)
-          
-          // Center map on marker
-          window.map.setCenter(marker.getPosition())
-          window.map.setZoom(15)
-        })
-
-        window.markers.push(marker)
-      }
-    })
-
-    // Fit bounds to show all markers if there are any
-    if (window.markers && window.markers.length > 0) {
-      const bounds = new google.maps.LatLngBounds()
-      window.markers.forEach(marker => bounds.extend(marker.getPosition()))
-      window.map.fitBounds(bounds)
-      
-      // If there's only one marker, zoom in closer
-      if (window.markers.length === 1) {
-        window.map.setZoom(15)
-      }
-    }
   }
 
   focusUniversity(event) {

@@ -1,9 +1,9 @@
 <%# Map Search Container %>
-<div class="container-fluid p-0">
+<div class="container-fluid p-0" data-controller="map-search" data-map-search-universities-value="<%= @universities.to_json %>">
   <div class="row g-0">
     <%# Map Section %>
     <div class="col-md-8">
-      <div id="map" style="height: calc(100vh - 56px);"></div>
+      <div id="map" data-map-search-target="map" style="height: calc(100vh - 56px);"></div>
     </div>
 
     <%# Search Panel Section %>
@@ -13,7 +13,7 @@
           <h2 class="card-title mb-4">Search Universities</h2>
           
           <%# Search Form %>
-          <%= form_with url: map_search_universities_path, method: :get, class: "mb-4", data: { controller: "map-search" } do |f| %>
+          <%= form_with url: map_search_universities_path, method: :get, class: "mb-4", data: { map_search_target: "form" } do |f| %>
             <div class="mb-3">
               <%= f.label :query, "Search by Location", class: "form-label" %>
               <%= f.text_field :query, 
@@ -63,223 +63,39 @@
   </div>
 </div>
 
-<%# Map Initialization Script %>
+<%# Load Google Maps with callback %>
 <script>
-  // Global variables
-  let map;
-  let markers = [];
-  let markerCluster;
-  let infoWindow;
-
-  // Function to get URL parameters
-  function getUrlParams() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      lat: params.get('lat') ? parseFloat(params.get('lat')) : null,
-      lng: params.get('lng') ? parseFloat(params.get('lng')) : null,
-      query: params.get('query') || ''
-    };
-  }
-
-  // Function to clear all markers
-  function clearMarkers() {
-    if (markers) {
-      markers.forEach(marker => marker.setMap(null));
-      markers = [];
-    }
-    if (markerCluster) {
-      markerCluster.clearMarkers();
+  // Prevent multiple loads and handle Turbo navigation
+  if (typeof window.google === 'undefined') {
+    window.initGoogleMaps = function() {
+      window.dispatchEvent(new Event('google-maps-ready'));
     }
   }
 
-  // Function to add markers and initialize clustering
-  function addMarkersToMap(universities) {
-    clearMarkers();
-    
-    universities.forEach(university => {
-      if (university.latitude && university.longitude) {
-        const position = {
-          lat: parseFloat(university.latitude),
-          lng: parseFloat(university.longitude)
-        };
-
-        const marker = new google.maps.Marker({
-          position: position,
-          map: map,
-          title: university.name,
-          animation: google.maps.Animation.DROP
-        });
-
-        marker.addListener('click', () => {
-          if (infoWindow) {
-            infoWindow.close();
-          }
-
-          const content = `
-            <div class="p-2">
-              <h5 class="mb-2">${university.name}</h5>
-              <p class="mb-1"><strong>Country:</strong> ${university.country || 'N/A'}</p>
-              <p class="mb-1"><strong>Type:</strong> ${university.type_of_university || 'N/A'}</p>
-              <p class="mb-1"><strong>Address:</strong> ${university.address || 'N/A'}</p>
-              <a href="/universities/${university.id}" class="btn btn-primary btn-sm mt-2 w-100" data-turbo="false">
-                View Details
-              </a>
-            </div>
-          `;
-
-          infoWindow.setContent(content);
-          infoWindow.open(map, marker);
-
-          map.setCenter(marker.getPosition());
-          map.setZoom(15);
-        });
-
-        markers.push(marker);
-      }
-    });
-
-    // Initialize clustering if we have markers
-    if (markers.length > 0) {
-      if (markerCluster) {
-        markerCluster.clearMarkers();
-      }
-
-      markerCluster = new MarkerClusterer(map, markers, {
-        gridSize: 60,
-        maxZoom: 15,
-        minimumClusterSize: 2,
-        imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-        styles: [
-          {
-            textColor: 'black',
-            url: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m1.png',
-            height: 53,
-            width: 53,
-            textSize: 16,
-            fontWeight: 'bold',
-            anchorText: [27, 27],
-            anchorIcon: [27, 27]
-          },
-          {
-            textColor: 'black',
-            url: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m2.png',
-            height: 56,
-            width: 56,
-            textSize: 16,
-            fontWeight: 'bold',
-            anchorText: [28, 28],
-            anchorIcon: [28, 28]
-          },
-          {
-            textColor: 'black',
-            url: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m3.png',
-            height: 66,
-            width: 66,
-            textSize: 16,
-            fontWeight: 'bold',
-            anchorText: [33, 33],
-            anchorIcon: [33, 33]
-          }
-        ]
-      });
-
-      // Fit bounds to show all markers
-      const bounds = new google.maps.LatLngBounds();
-      markers.forEach(marker => bounds.extend(marker.getPosition()));
-      map.fitBounds(bounds);
-
-      // Handle zoom level based on search parameters
-      const urlParams = getUrlParams();
-      if (urlParams.lat && urlParams.lng) {
-        map.setCenter({ lat: urlParams.lat, lng: urlParams.lng });
-        map.setZoom(10);
-      } else if (map.getZoom() > 15) {
-        map.setZoom(15);
-      }
+  // Clean up Google Maps elements on Turbo navigation
+  document.addEventListener('turbo:before-render', function() {
+    // Remove any existing Google Maps elements
+    document.querySelectorAll('[id^="gmp-"]').forEach(el => el.remove());
+    // Clear any existing map instances
+    if (window.map) {
+      window.map = null;
     }
-  }
-
-  function initMap() {
-    console.log('Initializing map...');
-    
-    const urlParams = getUrlParams();
-    
-    // Initialize the map
-    map = new google.maps.Map(document.getElementById('map'), {
-      zoom: urlParams.lat && urlParams.lng ? 10 : 2,
-      center: urlParams.lat && urlParams.lng ? 
-        { lat: urlParams.lat, lng: urlParams.lng } : 
-        { lat: 20, lng: 0 },
-      mapTypeId: 'terrain',
-      minZoom: 2
-    });
-
-    // Initialize info window
-    infoWindow = new google.maps.InfoWindow();
-
-    // Get initial universities data
-    const universities = <%= @universities.to_json.html_safe %>;
-    console.log('Initial universities data:', universities);
-
-    // Add markers for initial universities
-    addMarkersToMap(universities);
-
-    // Initialize Places Autocomplete
-    const input = document.querySelector('[data-map-search-target="input"]');
-    if (input) {
-      input.value = urlParams.query || '';
-      
-      const autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ['establishment', 'geocode']
-      });
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.geometry) {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          
-          input.value = place.formatted_address;
-          
-          let latInput = document.getElementById('lat');
-          let lngInput = document.getElementById('lng');
-          
-          if (!latInput) {
-            latInput = document.createElement('input');
-            latInput.type = 'hidden';
-            latInput.id = 'lat';
-            latInput.name = 'lat';
-            input.parentElement.appendChild(latInput);
-          }
-          
-          if (!lngInput) {
-            lngInput = document.createElement('input');
-            lngInput.type = 'hidden';
-            lngInput.id = 'lng';
-            lngInput.name = 'lng';
-            input.parentElement.appendChild(lngInput);
-          }
-          
-          latInput.value = lat;
-          lngInput.value = lng;
-          
-          input.closest('form').submit();
-        }
-      });
+    if (window.markers) {
+      window.markers.forEach(marker => marker.setMap(null));
+      window.markers = [];
     }
-  }
-
-  // Handle Turbo navigation
-  document.addEventListener('turbo:load', () => {
-    if (typeof google !== 'undefined' && google.maps) {
-      initMap();
+    if (window.markerCluster) {
+      window.markerCluster.clearMarkers();
+      window.markerCluster = null;
+    }
+    if (window.infoWindow) {
+      window.infoWindow.close();
+      window.infoWindow = null;
     }
   });
 </script>
-
-<%# Load Google Maps with callback %>
 <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjw3HIsW8WLLriMQ_u3wQng2ggRKRP2cg&libraries=places&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjw3HIsW8WLLriMQ_u3wQng2ggRKRP2cg&libraries=places&callback=initGoogleMaps">
 </script>
 
 <%# Load MarkerClusterer Library %>
