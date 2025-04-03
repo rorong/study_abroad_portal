@@ -27,6 +27,9 @@ class User < ApplicationRecord
       user.remember_created_at = Time.current
     end
   end
+  def admin?
+    self.admin
+  end
 
   private
 

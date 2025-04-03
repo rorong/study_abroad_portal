@@ -1,6 +1,7 @@
 Elasticsearch::Model.client = Elasticsearch::Client.new(
-  url: ENV.fetch("ELASTICSEARCH_URL", "http://localhost:9200"),
-  api_key: ENV.fetch("ELASTICSEARCH_API_KEY"),
+  host: "http://localhost:9200",
+  user: 'elastic',
+  password: '9zKxjPTvEqGlZb1n+h=E',
   transport_options: { ssl: { verify: false } },
   log: true
 )
