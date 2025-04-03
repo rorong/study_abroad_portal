@@ -21,9 +21,15 @@
               <%= f.password_field :password, autocomplete: "new-password", class: "form-control" %>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-3">
               <%= f.label :password_confirmation, class: "form-label" %>
               <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
+            </div>
+
+            <!-- Role Dropdown -->
+            <div class="mb-3">
+              <%= f.label :role, "Select Role", class: "form-label" %>
+              <%= f.select :role, User.roles.keys.map { |role| [role.humanize, role] }, {}, class: "form-select" %>
             </div>
 
             <div class="d-grid">

@@ -31,6 +31,16 @@
           <div class="text-center mt-4">
             <%= render "devise/shared/links" %>
           </div>
+
+          <hr class="my-4">
+
+          <!-- Google Sign-In Button -->
+          <div class="text-center">
+            <%= link_to user_google_oauth2_omniauth_authorize_path, class: "btn btn-danger d-flex align-items-center justify-content-center gap-2" do %>
+              <i class="fab fa-google"></i> Sign in with Google
+            <% end %>
+          </div>
+
         </div>
       </div>
     </div>
