@@ -1,0 +1,10 @@
+//= link_tree ../images
+//= link_directory ../javascripts .js
+//= link_directory ../stylesheets .css
+//= link controllers/filters_controller.js
+//= link controllers/hello_controller.js
+//= link controllers/index.js
+//= link controllers/map_search_controller.js
+//= link controllers/search_controller.js
+//= link controllers/search_page_controller.js
+//= link rails_admin.js
