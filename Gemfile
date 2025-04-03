@@ -46,7 +46,7 @@ group :development, :test do
   gem 'pry-rails'
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
-
+  gem 'dotenv'
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
 end
@@ -67,4 +67,7 @@ gem 'elasticsearch-rails'
 gem 'kaminari'
 gem 'httparty'
 gem "devise", "~> 4.9"
-
+gem 'pundit'
+gem 'omniauth'
+gem 'omniauth-google-oauth2'
+gem 'omniauth-rails_csrf_protection', '~> 1.0'
