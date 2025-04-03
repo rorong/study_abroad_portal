@@ -302,11 +302,6 @@ GEM
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
-    propshaft (1.1.0)
-      actionpack (>= 7.0.0)
-      activesupport (>= 7.0.0)
-      rack
-      railties (>= 7.0.0)
     pry (0.15.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -549,7 +544,6 @@ DEPENDENCIES
   omniauth-google-oauth2
   omniauth-rails_csrf_protection (~> 1.0)
   pg
-  propshaft
   pry-rails
   puma (>= 5.0)
   pundit
@@ -562,6 +556,7 @@ DEPENDENCIES
   solid_cable
   solid_cache
   solid_queue
+  sprockets-rails
   stimulus-rails
   thruster
   turbo-rails
