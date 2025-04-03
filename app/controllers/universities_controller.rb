@@ -7,28 +7,30 @@ class UniversitiesController < ApplicationController
   end
 
   def map_search
+    # Only get universities that have valid coordinates
     @universities = University.where.not(latitude: nil, longitude: nil)
     
-    # Apply filters if present
-    if params[:query].present?
-      query = params[:query].strip.downcase
-      @universities = @universities.where(
-        "LOWER(name) LIKE ? OR LOWER(country) LIKE ? OR LOWER(city) LIKE ?", 
-        "%#{query}%", "%#{query}%", "%#{query}%"
-      )
-    end
-    
-    if params[:country].present?
-      @universities = @universities.where("LOWER(country) = LOWER(?)", params[:country])
-    end
-    
-    if params[:type_of_university].present?
-      @universities = @universities.where("LOWER(type_of_university) = LOWER(?)", params[:type_of_university])
-    end
+    # Apply location-based search if coordinates are provided
+    if params[:lat].present? && params[:lng].present? && params[:query].present?
+      lat = params[:lat].to_f
+      lng = params[:lng].to_f
+      radius_km = 50 # 50km radius
+      
+      # Using Haversine formula for distance calculation
+      distance_formula = "(6371 * acos(cos(radians(#{ActiveRecord::Base.connection.quote(lat)})) * " \
+                        "cos(radians(latitude)) * " \
+                        "cos(radians(longitude) - radians(#{ActiveRecord::Base.connection.quote(lng)})) + " \
+                        "sin(radians(#{ActiveRecord::Base.connection.quote(lat)})) * " \
+                        "sin(radians(latitude))))"
 
-    # Get available options for filters
-    @available_countries = University.distinct.pluck(:country).compact.sort
-    @available_types = University.distinct.pluck(:type_of_university).compact.sort
+      @universities = @universities
+        .select("universities.*, #{distance_formula} as distance")
+        .where("#{distance_formula} <= ?", radius_km)
+        .order('distance')
+    else
+      # Show all universities by default, ordered by name
+      @universities = @universities.order(:name)
+    end
 
     respond_to do |format|
       format.html
@@ -37,7 +39,7 @@ class UniversitiesController < ApplicationController
           universities: @universities.as_json(
             only: [:id, :name, :latitude, :longitude, :country, :city, :address, :type_of_university, :world_ranking, :qs_ranking]
           ),
-          total_count: @universities.count
+          total_count: @universities.size
         }
       }
     end
