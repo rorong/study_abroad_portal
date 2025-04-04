@@ -12,11 +12,16 @@ RailsAdmin.config do |config|
   ## == Pundit ==
   config.authorize_with :pundit
 
+  # Only allow admin users to access Rails Admin
+  config.authorize_with do
+    unless current_user.admin?
+      flash[:error] = 'You are not authorized to access this area.'
+      redirect_to main_app.root_path
+    end
+  end
+
   # Display empty fields in show views
   config.compact_show_view = false
-  unless current_user&.admin?
-    redirect_to root_path
-  end
 
   # Number of default rows per-page
   config.default_items_per_page = 20
