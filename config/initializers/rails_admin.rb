@@ -14,6 +14,9 @@ RailsAdmin.config do |config|
 
   # Display empty fields in show views
   config.compact_show_view = false
+  unless current_user&.admin?
+    redirect_to root_path
+  end
 
   # Number of default rows per-page
   config.default_items_per_page = 20
