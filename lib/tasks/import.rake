@@ -7,7 +7,6 @@ namespace :import do
     file_path = "Courses_db.csv"
 
     CSV.foreach(file_path, headers: true, liberal_parsing: true).each_with_index do |row, index|
-      puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#{index}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
      break if index == 2500
       begin
         ActiveRecord::Base.transaction do

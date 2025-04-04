@@ -1,14 +1,18 @@
 class UniversitiesController < ApplicationController
+  after_action :verify_authorized
+
   def show
     @university = University.find(params[:id])
+    authorize @university
     @courses = @university.courses.includes(:department, :institution, :tags, :education_board)
                         .page(params[:page])
                         .per(20)
   end
 
   def map_search
+    authorize University, :map_search?
     # Only get universities that have valid coordinates
-    @universities = University.where.not(latitude: nil, longitude: nil)
+    @universities = policy_scope(University).where.not(latitude: nil, longitude: nil)
     
     # Apply location-based search if coordinates are provided
     if params[:lat].present? && params[:lng].present? && params[:query].present?

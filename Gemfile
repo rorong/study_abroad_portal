@@ -66,8 +66,12 @@ gem 'elasticsearch-model'
 gem 'elasticsearch-rails'
 gem 'kaminari'
 gem 'httparty'
-gem "devise", "~> 4.9"
+gem "devise", "~> 4.9.0"
 gem 'pundit'
 gem 'omniauth'
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection', '~> 1.0'
+
+# Admin interface
+gem 'rails_admin'
+gem "cssbundling-rails"

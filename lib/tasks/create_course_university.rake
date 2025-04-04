@@ -79,6 +79,7 @@ namespace :import do
         unless CourseUniversity.exists?(course_id: course.id, university_id: university.id)
           CourseUniversity.create!(course_id: course.id, university_id: university.id)
           created_count += 1
+          puts "✅ Successfully created #{created_count} CourseUniversity records!"
         end
       end
     end
