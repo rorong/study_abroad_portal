@@ -14,6 +14,12 @@ class UniversitiesController < ApplicationController
     # Only get universities that have valid coordinates
     @universities = policy_scope(University).where.not(latitude: nil, longitude: nil)
     
+    # If university_ids are provided (from course search results), filter by those IDs
+    if params[:university_ids].present?
+      university_ids = params[:university_ids].split(',').map(&:to_i)
+      @universities = @universities.where(id: university_ids)
+    end
+    
     # Apply location-based search if coordinates are provided
     if params[:lat].present? && params[:lng].present? && params[:query].present?
       lat = params[:lat].to_f

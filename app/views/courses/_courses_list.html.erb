@@ -1,8 +1,9 @@
 <%# Cache the commonly used values %>
 <% query_params = request.query_parameters %>
 <% course_count = @course_count || 0 %>
+<% university_count = @university_count || 0 # Use the count from controller %>
 
-<div data-controller="search">
+<div data-controller="search" data-currency="<%= session[:currency] || 'USD' %>">
   <%# Optimize filter processing by caching the lookups %>
   <% selected_filters = {}.tap do |filters|
     if params[:institution_id].present?
@@ -17,7 +18,6 @@
     filters[:course_duration] = "#{params[:course_duration]} months" if params[:course_duration].present?
     filters[:level_of_course] = params[:level_of_course] if params[:level_of_course].present?
     filters[:internship_period] = params[:internship_period] if params[:internship_period].present?
-    filters[:application_fee] = "$#{params[:application_fee]}" if params[:application_fee].present?
     filters[:allow_backlogs] = case params[:allow_backlogs]
                               when "0" then "No Backlogs"
                               when "2" then "1-2 Backlogs"
@@ -35,8 +35,8 @@
     # Handle tuition fee range
     if params[:min_tuition_fee].present? || params[:max_tuition_fee].present?
       tuition_range = []
-      tuition_range << "Min: $#{params[:min_tuition_fee]}" if params[:min_tuition_fee].present?
-      tuition_range << "Max: $#{params[:max_tuition_fee]}" if params[:max_tuition_fee].present?
+      tuition_range << "Min: #{format_currency(params[:min_tuition_fee])}" if params[:min_tuition_fee].present?
+      tuition_range << "Max: #{format_currency(params[:max_tuition_fee])}" if params[:max_tuition_fee].present?
       filters[:tuition_fee] = "Tuition Fee (#{tuition_range.join(' - ')})"
     end
     
@@ -88,9 +88,9 @@
     # Handle application fee range
     if params[:min_application_fee].present? || params[:max_application_fee].present?
       application_fee_range = []
-      application_fee_range << "Min: $#{params[:min_application_fee]}" if params[:min_application_fee].present?
-      application_fee_range << "Max: $#{params[:max_application_fee]}" if params[:max_application_fee].present?
-      filters[:application_fee_range] = "Application Fee (#{application_fee_range.join(' - ')})"
+      application_fee_range << "Min: #{format_currency(params[:min_application_fee])}" if params[:min_application_fee].present?
+      application_fee_range << "Max: #{format_currency(params[:max_application_fee])}" if params[:max_application_fee].present?
+      filters[:application_fee] = "Application Fee (#{application_fee_range.join(' -')})"
     end
 
     # Handle distance range
@@ -115,10 +115,10 @@
             <%= value %>
             <%# Handle range filters differently %>
             <% if key.to_s.end_with?('_ranking') || key == :tuition_fee || key == :duration || 
-                  key == :internship || key == :application_fee_range || key == :distance %>
+                  key == :internship || key == :application_fee || key == :distance %>
               <%# Create a new params hash without the range parameters %>
               <% new_params = query_params.dup %>
-              <% if key == :application_fee_range %>
+              <% if key == :application_fee %>
                 <% new_params.delete(:min_application_fee) %>
                 <% new_params.delete(:max_application_fee) %>
               <% else %>
@@ -139,6 +139,14 @@
                           class: "text-white ms-2 text-decoration-none fw-bold", 
                           method: :get, 
                           onclick: "window.location.href=this.href; return false;" %>
+            <% elsif key == :application_fee_range %>
+              <% min, max = filters[:application_fee_range].split('-').map(&:to_f) %>
+              <%= link_to courses_path(filters.except(:application_fee_range)), class: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" do %>
+                Application Fee: <%= format_currency(min) %> - <%= format_currency(max) %>
+                <svg class="ml-1.5 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              <% end %>
             <% else %>
               <%= link_to "X", courses_path(query_params.except(key)), 
                           class: "text-white ms-2 text-decoration-none fw-bold", 
@@ -159,76 +167,137 @@
   <div class="mb-3 d-flex justify-content-between align-items-center">
     <h5 class="text-dark mb-0">
       <% if params[:query].present? %>
-        Showing matches for "<span class="text-primary fw-bold"><%= params[:query] %></span>":
+        Showing matches for "<span class="text-primary fw-bold"><%= params[:query] %></span>":<br>
       <% end %>
-      <span id="course_count" class="fw-bold"><%= course_count %> Courses found</span>
+      <div class="mt-1">
+        <span class="fw-normal">Courses (<span class="text-primary fw-bold"><%= course_count %></span>) available in (<span class="text-primary fw-bold"><%= university_count %></span>) Institutes</span>
+      </div>
     </h5>
     
-    <%= form_tag courses_path, method: :get, class: "d-flex align-items-center", data: { turbo: true } do %>
-      <%# Preserve all existing query parameters %>
-      <% query_params.each do |key, value| %>
-        <%= hidden_field_tag key, value unless key == 'sort' %>
+    <div class="d-flex align-items-center">
+      <%# Add Map View button if we have universities from search results %>
+      <% if courses.any? && @all_university_ids.present? %>
+        <%= link_to map_search_universities_path(university_ids: @all_university_ids.join(',')), class: "btn btn-success me-2", data: { turbo: false } do %>
+          <i class="fas fa-map-marked-alt me-1"></i> View on Map
+        <% end %>
       <% end %>
       
-      <label class="me-2 text-muted">Sort by:</label>
-      <%= select_tag :sort, 
-          options_for_select([
-            ['Default', ''],
-            ['Application Fee (Low to High)', 'application_fee_asc'],
-            ['Application Fee (High to Low)', 'application_fee_desc'],
-            ['Tuition Fee (Low to High)', 'tuition_fee_asc'],
-            ['Tuition Fee (High to Low)', 'tuition_fee_desc'],
-            ['Course Duration (Short to Long)', 'course_duration_asc'],
-            ['Course Duration (Long to Short)', 'course_duration_desc']
-          ], params[:sort]),
-          class: "form-select form-select-sm",
-          style: "width: auto;",
-          data: { action: "change->search#handleSort" } %>
-    <% end %>
+      <%= form_tag courses_path, method: :get, class: "d-flex align-items-center", data: { turbo: true } do %>
+        <%# Preserve all existing query parameters %>
+        <% query_params.each do |key, value| %>
+          <%= hidden_field_tag key, value unless key == 'sort' %>
+        <% end %>
+        
+        <label class="me-2 text-muted">Sort by:</label>
+        <%= select_tag :sort, 
+            options_for_select([
+              ['Default', ''],
+              ['Application Fee (Low to High)', 'application_fee_asc'],
+              ['Application Fee (High to Low)', 'application_fee_desc'],
+              ['Tuition Fee (Low to High)', 'tuition_fee_asc'],
+              ['Tuition Fee (High to Low)', 'tuition_fee_desc'],
+              ['Course Duration (Short to Long)', 'course_duration_asc'],
+              ['Course Duration (Long to Short)', 'course_duration_desc']
+            ], params[:sort]),
+            class: "form-select form-select-sm",
+            style: "width: auto;",
+            data: { action: "change->search#handleSort" } %>
+      <% end %>
+    </div>
   </div>
 
   <% if courses.any? %>
     <% courses_by_university.each do |university, university_courses| %>
       <% if university.present? %>
         <div class="mb-5">
-          <div class="bg-light p-3 rounded mb-3">
-            <h4 class="mb-0">
-              <i class="fas fa-university me-2"></i>
-              <%= university.name %>
-            </h4>
+          <div class="bg-light p-3 rounded mb-3 d-flex align-items-center">
+            <div>
+              <h4 class="mb-0">
+                <%= link_to university.name, university_path(university), class: "text-decoration-none text-dark", data: { turbo: false } %>
+              </h4>
+              <% if university.country.present? %>
+                <div class="text-muted">
+                  <i class="fas fa-globe-americas me-1"></i>
+                  <%= university.country %>
+                </div>
+              <% end %>
+            </div>
           </div>
-          <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+
+          <div class="list-group">
             <% university_courses.each do |course| %>
               <% cache course do %>
-                <div class="col">
-                  <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
-                    <div class="card-header bg-primary text-white">
-                      <h5 class="card-title m-0 fw-bold"><%= course.name %></h5>
+                <div class="list-group-item border-0 bg-white mb-3 shadow-sm rounded p-4">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <h5 class="mb-3 text-primary fw-bold"><%= course.name %></h5>
+                      
+                      <div class="row mb-4">
+                        <div class="col-md-4">
+                          <div class="mb-3">
+                            <div class="text-muted mb-1">Tuition Fee</div>
+                            <div class="fw-bold">
+                              <% if course.tuition_fee_international.present? %>
+                                <%= format_currency(convert_currency(course.tuition_fee_international)) %>
+                              <% else %>
+                                N/A
+                              <% end %>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                          <div class="mb-3">
+                            <div class="text-muted mb-1">Application Fee</div>
+                            <div class="fw-bold">
+                              <% if course.application_fee.present? %>
+                                <%= format_currency(convert_currency(course.application_fee)) %>
+                              <% else %>
+                                N/A
+                              <% end %>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                          <div class="mb-3">
+                            <div class="text-muted mb-1">Duration</div>
+                            <div class="fw-bold"><%= course.course_duration %> months</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-md-4">
+                          <div class="mb-3">
+                            <div class="text-muted mb-1">Intake</div>
+                            <div class="fw-bold"><%= course.intake || "N/A" %></div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                          <div class="mb-3">
+                            <div class="text-muted mb-1">Title</div>
+                            <div class="fw-bold"><%= course.title || "N/A" %></div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                          <div class="mb-3">
+                            <div class="text-muted mb-1">Internship Period</div>
+                            <div class="fw-bold"><%= course.internship_period || 0 %> months</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div class="card-body">
-                      <% if course.title.present? %>
-                        <p class="card-subtitle text-muted mb-2"><%= course.title %></p>
-                      <% end %>
-                      <p class="mb-1"><strong>🏫 Universities:</strong> <%= course.universities.map(&:name).join(", ") %></p>
-                      <p class="mb-1"><strong>📚 Department:</strong> <%= course.department&.name || "N/A" %></p>
-                      <p class="mb-1"><strong>📌 Level:</strong> <%= course.level_of_course || "N/A" %></p>
-                      <p class="mb-1"><strong>⏳ Duration:</strong> <%= course.course_duration %> months</p>
-                      <p class="mb-1"><strong>📅 Intake:</strong> <%= course.intake || "N/A" %></p>
-                      <p class="mb-1"><strong>🚚 Delivery Method:</strong> <%= course.delivery_method || "N/A" %></p>
-                      <% if course.tuition_fee_international.present? %>
-                        <p class="mb-1"><strong>💰 Tuition (Intl):</strong> $<%= number_with_delimiter(course.tuition_fee_international) %></p>
-                      <% end %>
-                      <% if course.application_fee.present? %>
-                        <p class="mb-1"><strong>📝 Application Fee:</strong> $<%= course.application_fee %></p>
-                      <% end %>
-                    </div>
-                    <div class="card-footer bg-white border-0 text-center">
-                      <%= link_to course_path(course), class: "btn btn-outline-primary w-100 fw-bold", data: { turbo: false } do %>
-                        <i class="fas fa-info-circle me-2"></i>View Details
+
+                    <div class="ms-4 d-flex flex-column">
+                      <%= link_to course_path(course), class: "btn btn-primary btn-sm mb-2", data: { turbo: false } do %>
+                        <i class="fas fa-info-circle me-1"></i>Details
                       <% end %>
                       <% if course.course_weblink.present? %>
-                        <a href="<%= course.course_weblink %>" target="_blank" class="btn btn-outline-warning w-100 fw-bold mt-2">
-                          <i class="fas fa-external-link-alt me-2"></i>Visit Website
+                        <a href="<%= course.course_weblink %>" target="_blank" class="btn btn-warning btn-sm">
+                          <i class="fas fa-external-link-alt me-1"></i>Website
                         </a>
                       <% end %>
                     </div>

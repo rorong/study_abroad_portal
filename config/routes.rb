@@ -25,6 +25,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # Currency routes
+  post 'set_currency', to: 'currencies#set_currency', as: :set_currency
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -39,4 +42,7 @@ Rails.application.routes.draw do
   # root "posts#index"
 
   get 'debug_search/:query' => 'courses#debug_search'
+
+  # Add exchange rates route
+  get 'exchange_rates', to: 'application#exchange_rates'
 end

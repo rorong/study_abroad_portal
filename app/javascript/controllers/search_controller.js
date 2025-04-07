@@ -17,6 +17,20 @@ export default class SearchController extends Controller {
     this.searchTimeout = null;
     this.autocomplete = null;
     
+    // Initialize currency from data attribute
+    this.currency = this.element.dataset.currency || 'USD';
+    
+    // Initialize exchange rates
+    this.exchangeRates = {
+      'USD': 1.0,
+      'CAD': 1.37,
+      'INR': 83.12,
+      'GBP': 0.79
+    };
+    
+    // Fetch exchange rates from server
+    this.fetchExchangeRates();
+    
     // Add click outside listener only if queryResults target exists
     if (this.hasQueryResultsTarget) {
       document.addEventListener('click', (event) => {
@@ -35,15 +49,55 @@ export default class SearchController extends Controller {
     }
   }
 
+  fetchExchangeRates() {
+    fetch('/exchange_rates')
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error('Failed to fetch exchange rates');
+      })
+      .then(data => {
+        this.exchangeRates = data;
+        console.log('Exchange rates updated:', this.exchangeRates);
+        
+        // Reinitialize sliders with new exchange rates
+        this.initializeSliders();
+      })
+      .catch(error => {
+        console.error('Error fetching exchange rates:', error);
+        // Keep using the default hardcoded rates
+      });
+  }
+
   initializeSliders() {
     // Initialize duration slider if it exists
     if (this.hasDurationSliderTarget) {
       this.initializeDurationSlider();
     }
 
-    // Initialize application fee slider if it exists
+    // Initialize tuition fee slider
+    if (this.hasTuitionFeeSliderTarget) {
+      const slider = this.tuitionFeeSliderTarget;
+      const maxInput = this.maxTuitionFeeTarget;
+      
+      // Set initial value if not already set
+      if (!maxInput.value) {
+        maxInput.value = this.convertCurrency(100000, 'USD', this.currency);
+        slider.value = maxInput.value;
+      }
+    }
+
+    // Initialize application fee slider
     if (this.hasApplicationFeeSliderTarget) {
-      this.initializeApplicationFeeSlider();
+      const slider = this.applicationFeeSliderTarget;
+      const maxInput = this.maxApplicationFeeTarget;
+      
+      // Set initial value if not already set
+      if (!maxInput.value) {
+        maxInput.value = this.convertCurrency(500, 'USD', this.currency);
+        slider.value = maxInput.value;
+      }
     }
 
     // Initialize internship slider if it exists
@@ -64,11 +118,6 @@ export default class SearchController extends Controller {
     // Initialize national ranking slider if it exists
     if (this.hasNationalRankingSliderTarget) {
       this.initializeNationalRankingSlider();
-    }
-
-    // Initialize tuition fee slider if it exists
-    if (this.hasTuitionFeeSliderTarget) {
-      this.initializeTuitionFeeSlider();
     }
   }
 
@@ -296,6 +345,14 @@ export default class SearchController extends Controller {
     if (parseInt(minInput.value) > parseInt(maxInput.value)) {
       minInput.value = maxInput.value;
     }
+
+    // Set the application fee range parameter
+    const params = new URLSearchParams(window.location.search);
+    params.set('application_fee_range', `${minInput.value}-${maxInput.value}`);
+    
+    // Update URL without reloading the page
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({}, '', newUrl);
 
     // Trigger search
     this.search(event);
@@ -536,6 +593,17 @@ export default class SearchController extends Controller {
       const url = form.action + '?' + uniqueParams.toString();
       window.location.href = url;
     }
+  }
+
+  convertCurrency(amount, fromCurrency, toCurrency) {
+    // Convert to USD first if not already in USD
+    const usdAmount = fromCurrency === 'USD' ? amount : amount / this.exchangeRates[fromCurrency];
+    
+    // Then convert to target currency
+    const convertedAmount = usdAmount * this.exchangeRates[toCurrency];
+    
+    // Round to 2 decimal places
+    return Math.round(convertedAmount * 100) / 100;
   }
 }
  

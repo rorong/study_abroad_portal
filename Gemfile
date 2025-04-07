@@ -75,3 +75,6 @@ gem 'omniauth-rails_csrf_protection', '~> 1.0'
 # Admin interface
 gem 'rails_admin'
 gem "cssbundling-rails"
+
+# HTTP client for API requests
+gem 'http', '~> 5.1'

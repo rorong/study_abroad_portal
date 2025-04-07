@@ -5,10 +5,10 @@ class CoursesController < ApplicationController
 
   def index
     # Only show results if there's a search query
-    if params[:query].blank?
-      redirect_to search_page_courses_path
-      return
-    end
+    # if params[:query].blank?
+    #   redirect_to search_page_courses_path
+    #   return
+    # end
 
     # Clone the params to avoid modifying the original request params
     filtered_params = params.to_unsafe_h.except(:controller, :action)
@@ -19,7 +19,7 @@ class CoursesController < ApplicationController
     # Apply search query if present
     if params[:query].present?
       # Limit initial search results to improve performance
-      results = Course.search_courses_and_subjects(params[:query], limit: 200)
+      results = Course.search_courses_and_subjects(params[:query], limit: 2000)
       @courses_by_university = results[:courses_by_university]
       @subjects = results[:subjects]
       @tests = results[:tests]
@@ -48,14 +48,18 @@ class CoursesController < ApplicationController
       lng = filtered_params[:longitude].to_f
       distance = 50 # 50 km radius
       
-      @courses = @courses.joins(:universities)
-                        .where("(
-                          6371 * acos(
-                            cos(radians(CAST(? AS float))) * cos(radians(CAST(universities.latitude AS float))) *
-                            cos(radians(CAST(universities.longitude AS float)) - radians(CAST(? AS float))) +
-                            sin(radians(CAST(? AS float))) * sin(radians(CAST(universities.latitude AS float)))
-                          )
-                        ) <= ?", lat, lng, lat, distance)
+      # Using Haversine formula for distance calculation
+      distance_formula = "(6371 * acos(cos(radians(#{ActiveRecord::Base.connection.quote(lat)})) * " \
+                        "cos(radians(universities.latitude)) * " \
+                        "cos(radians(universities.longitude) - radians(#{ActiveRecord::Base.connection.quote(lng)})) + " \
+                        "sin(radians(#{ActiveRecord::Base.connection.quote(lat)})) * " \
+                        "sin(radians(universities.latitude))))"
+
+      @courses = @courses
+        .joins(:universities)
+        .where("#{distance_formula} <= ?", distance)
+        .select("courses.*, #{distance_formula} as distance")
+        .order('distance')
     end
     
     # Handle course duration range
@@ -179,78 +183,42 @@ class CoursesController < ApplicationController
     elsif !params[:query].present?
       @courses_by_university = @courses.select { |course| course.universities.any? }.group_by { |course| course.universities.first }
     end
-
     # Get total count for pagination without loading all records
     @course_count = @courses.count
-
+    # Get total unique universities count before pagination
+    @university_count = @courses.joins(:universities).select('universities.id').distinct.count
+    
+    # Store all university IDs before pagination for the map view
+    @all_university_ids = @courses.joins(:universities).select('universities.id').distinct.pluck('universities.id')
+    
     # Calculate filter options from the total filtered results before pagination
     filtered_course_ids = @courses.pluck(:id)
-
     # Prepare dynamic filter options based on current filtered results
-    @available_institutions = Institution.joins(:courses)
-                                      .where(courses: { id: filtered_course_ids })
-                                      .distinct
-    
-    @available_departments = Department.joins(:courses)
-                                     .where(courses: { id: filtered_course_ids })
-                                     .distinct
-    
-    @available_universities = University.joins(:courses)
-                                      .where(courses: { id: filtered_course_ids })
-                                      .distinct
-    
-    @available_university_countries = University.joins(:courses)
-                                              .where(courses: { id: filtered_course_ids })
-                                              .distinct
-                                              .pluck(:country)
-                                              .compact
-    
-    @available_university_types = University.joins(:courses)
-                                              .where(courses: { id: filtered_course_ids })
-                                              .distinct
-                                              .pluck(:type_of_university)
-                                              .compact
-    
+    @available_institutions = Institution.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
+    @available_departments = Department.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
+    @available_universities = University.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
+    @available_university_countries = University.joins(:courses).where(courses: { id: filtered_course_ids }).distinct.pluck(:country).compact
+    @available_university_types = University.joins(:courses).where(courses: { id: filtered_course_ids }).distinct.pluck(:type_of_university).compact
     @available_intakes = Course.where(id: filtered_course_ids).distinct.pluck(:intake).compact
     @available_statuses = Course.where(id: filtered_course_ids).distinct.pluck(:current_status).compact
     @available_delivery_methods = Course.where(id: filtered_course_ids).distinct.pluck(:delivery_method).compact
     @available_durations = Course.where(id: filtered_course_ids).distinct.pluck(:course_duration).compact
     @available_levels = Course.where(id: filtered_course_ids).distinct.pluck(:level_of_course).compact
     @available_application_fees = Course.where(id: filtered_course_ids).distinct.pluck(:application_fee).compact
-    
-    # Add available backlogs options based on filtered results
     @available_backlogs = Course.where(id: filtered_course_ids).distinct.pluck(:allow_backlogs).compact
-    
-    # Add available lateral entry options based on filtered results
-    @available_lateral_entries = Course.joins(:course_requirement)
-                                     .where(id: filtered_course_ids)
-                                     .distinct
-                                     .pluck('course_requirements.lateral_entry_possible')
-                                     .compact
-    
-    @available_tags = Tag.joins(:courses)
-                        .where(courses: { id: filtered_course_ids })
-                        .distinct
-    
-    @available_education_boards = EducationBoard.joins(:courses)
-                                              .where(courses: { id: filtered_course_ids })
-                                              .distinct
-
-    # Apply pagination after calculating filter options
+    @available_lateral_entries = Course.joins(:course_requirement).where(id: filtered_course_ids).distinct.pluck('course_requirements.lateral_entry_possible').compact
+    @available_tags = Tag.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
+    @available_education_boards = EducationBoard.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
     @courses = @courses.page(params[:page]).per(15)
 
-    # Group courses by university consistently
     if params[:query].present?
       filtered_course_ids = @courses.pluck(:id)
       @courses_by_university = @courses_by_university.transform_values do |courses|
         courses.select { |course| filtered_course_ids.include?(course.id) }
       end.reject { |_, courses| courses.empty? }
     else
-      @courses_by_university = @courses.joins(:universities)
-                                     .group_by { |course| course.universities.first }
-                                     .reject { |_, courses| courses.empty? }
+      @courses_by_university = @courses.joins(:universities).group_by { |course| course.universities.first }.reject { |_, courses| courses.empty? }
     end
-
     respond_to do |format|
       format.html
       format.turbo_stream { 
@@ -290,8 +258,8 @@ class CoursesController < ApplicationController
     if query.present?
       # Limit search results to improve performance
       @courses = Course.joins(:universities)
-                      .where("courses.title ILIKE ? OR universities.name ILIKE ?", "%#{query}%", "%#{query}%")
-                      .select("courses.id, courses.title as name, universities.name as university_name")
+                      .where("courses.name ILIKE ? OR universities.name ILIKE ?", "%#{query}%", "%#{query}%")
+                      .select("courses.id, courses.name as name, universities.name as university_name")
                       .limit(10)
                       .map { |course| [course.id, course.name, course.university_name] }
       Rails.logger.info "Found #{@courses.size} results"
