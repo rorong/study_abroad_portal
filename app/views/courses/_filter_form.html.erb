@@ -117,10 +117,23 @@
             },
             autocomplete: "off"
           %>
-          <%= f.hidden_field :latitude, data: { search_target: "latitude" } %>
-          <%= f.hidden_field :longitude, data: { search_target: "longitude" } %>
+          <%= f.hidden_field :latitude, value: params[:latitude], data: { search_target: "latitude" } %>
+          <%= f.hidden_field :longitude, value: params[:longitude], data: { search_target: "longitude" } %>
           <div class="invalid-feedback" data-search-target="addressError">
             Please enter a valid address
+          </div>
+        </div>
+        <div class="mt-2">
+          <%= f.label :distance, "Search Radius (km)", class: "form-label" %>
+          <div class="d-flex align-items-center">
+            <%= f.number_field :distance, 
+              value: params[:distance] || 50,
+              placeholder: "Radius",
+              class: "form-control form-control-sm", 
+              data: { 
+                search_target: "distance",
+                action: "input->search#search"
+              } %>
           </div>
         </div>
       </div>

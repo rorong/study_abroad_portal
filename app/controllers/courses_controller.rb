@@ -19,7 +19,7 @@ class CoursesController < ApplicationController
     # Apply search query if present
     if params[:query].present?
       # Limit initial search results to improve performance
-      results = Course.search_courses_and_subjects(params[:query], limit: 2000)
+      results = Course.search_courses_and_subjects(params[:query], limit: 200)
       @courses_by_university = results[:courses_by_university]
       @subjects = results[:subjects]
       @tests = results[:tests]
@@ -46,7 +46,7 @@ class CoursesController < ApplicationController
     if filtered_params[:latitude].present? && filtered_params[:longitude].present?
       lat = filtered_params[:latitude].to_f
       lng = filtered_params[:longitude].to_f
-      distance = 50 # 50 km radius
+      distance = filtered_params[:distance].present? ? filtered_params[:distance].to_f : 50 # Use the distance parameter or default to 50 km
       
       # Using Haversine formula for distance calculation
       distance_formula = "(6371 * acos(cos(radians(#{ActiveRecord::Base.connection.quote(lat)})) * " \
@@ -55,11 +55,10 @@ class CoursesController < ApplicationController
                         "sin(radians(#{ActiveRecord::Base.connection.quote(lat)})) * " \
                         "sin(radians(universities.latitude))))"
 
+      # Apply the distance filter
       @courses = @courses
         .joins(:universities)
         .where("#{distance_formula} <= ?", distance)
-        .select("courses.*, #{distance_formula} as distance")
-        .order('distance')
     end
     
     # Handle course duration range

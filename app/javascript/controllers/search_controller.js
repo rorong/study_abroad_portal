@@ -9,7 +9,8 @@ export default class SearchController extends Controller {
                     "minQsRanking", "maxQsRanking", "qsRankingSlider",
                     "minNationalRanking", "maxNationalRanking", "nationalRankingSlider",
                     "minTuitionFee", "maxTuitionFee", "tuitionFeeSlider",
-                    "addressInput", "latitude", "longitude", "addressError"];
+                    "addressInput", "latitude", "longitude", "addressError",
+                    "distance", "distanceSlider"];
 
   connect() {
     console.log("Search controller connected!");
@@ -119,6 +120,11 @@ export default class SearchController extends Controller {
     if (this.hasNationalRankingSliderTarget) {
       this.initializeNationalRankingSlider();
     }
+    
+    // Initialize distance slider if it exists
+    if (this.hasDistanceSliderTarget) {
+      this.initializeDistanceSlider();
+    }
   }
 
   initializeDurationSlider() {
@@ -216,6 +222,19 @@ export default class SearchController extends Controller {
     }
     if (maxInput.value) {
       slider.value = maxInput.value;
+    }
+  }
+
+  initializeDistanceSlider() {
+    const slider = this.distanceSliderTarget;
+    const input = this.distanceTarget;
+
+    // Set initial value if not already set
+    if (!input.value) {
+      input.value = 50;
+      slider.value = 50;
+    } else {
+      slider.value = input.value;
     }
   }
 
@@ -443,6 +462,33 @@ export default class SearchController extends Controller {
     this.search(event);
   }
 
+  updateDistanceInputs(event) {
+    const slider = event.target;
+    const input = this.distanceTarget;
+
+    // Update distance input with slider value
+    input.value = slider.value;
+    
+    // Get the form element
+    const form = this.element;
+    
+    // Create a FormData object from the form
+    const formData = new FormData(form);
+    
+    // Create a URLSearchParams object
+    const params = new URLSearchParams();
+    
+    // Add all form data to the params
+    for (const [key, value] of formData.entries()) {
+      if (value) {
+        params.append(key, value);
+      }
+    }
+    
+    // Submit the form with Turbo
+    Turbo.visit(form.action + '?' + params.toString(), { action: "replace" });
+  }
+
   search(event) {
     console.log("Searching...");
     clearTimeout(this.timeout);
@@ -458,7 +504,40 @@ export default class SearchController extends Controller {
     // Set timeout for form submission
     this.timeout = setTimeout(() => {
       if (form) {
-        Turbo.visit(form.action + '?' + new URLSearchParams(new FormData(form)), { action: "replace" });
+        // Get current URL parameters to preserve values
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Create a new FormData object from the form
+        const formData = new FormData(form);
+        
+        // Create a new URLSearchParams object
+        const newParams = new URLSearchParams();
+        
+        // Add all form data to the new params
+        for (const [key, value] of formData.entries()) {
+          if (value) {
+            newParams.append(key, value);
+          }
+        }
+        
+        // Preserve latitude, longitude, and distance if they exist in the current URL
+        if (urlParams.has('latitude') && !newParams.has('latitude')) {
+          newParams.append('latitude', urlParams.get('latitude'));
+        }
+        
+        if (urlParams.has('longitude') && !newParams.has('longitude')) {
+          newParams.append('longitude', urlParams.get('longitude'));
+        }
+        
+        // Always include the distance value from the input field
+        if (this.hasDistanceTarget && this.distanceTarget.value) {
+          newParams.set('distance', this.distanceTarget.value);
+        } else if (urlParams.has('distance') && !newParams.has('distance')) {
+          newParams.append('distance', urlParams.get('distance'));
+        }
+        
+        // Submit the form with the preserved parameters
+        Turbo.visit(form.action + '?' + newParams.toString(), { action: "replace" });
       }
     }, 300);
   }
