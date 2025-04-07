@@ -218,6 +218,16 @@ class CoursesController < ApplicationController
     @available_levels = Course.where(id: filtered_course_ids).distinct.pluck(:level_of_course).compact
     @available_application_fees = Course.where(id: filtered_course_ids).distinct.pluck(:application_fee).compact
     
+    # Add available backlogs options based on filtered results
+    @available_backlogs = Course.where(id: filtered_course_ids).distinct.pluck(:allow_backlogs).compact
+    
+    # Add available lateral entry options based on filtered results
+    @available_lateral_entries = Course.joins(:course_requirement)
+                                     .where(id: filtered_course_ids)
+                                     .distinct
+                                     .pluck('course_requirements.lateral_entry_possible')
+                                     .compact
+    
     @available_tags = Tag.joins(:courses)
                         .where(courses: { id: filtered_course_ids })
                         .distinct
@@ -255,7 +265,9 @@ class CoursesController < ApplicationController
             institutions: @available_institutions,
             departments: @available_departments,
             tags: @available_tags,
-            universities: @available_universities
+            universities: @available_universities,
+            available_backlogs: @available_backlogs,
+            available_lateral_entries: @available_lateral_entries
           }
         )
       }

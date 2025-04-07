@@ -135,9 +135,7 @@
         <%= f.label :allow_backlogs, "Backlogs Allowed", class: "form-label" %>
         <%= f.select :allow_backlogs,
           options_for_select(
-            Course.distinct.pluck(:allow_backlogs).map do |backlogs|
-              ["#{backlogs} Backlogs (#{Course.where(allow_backlogs: backlogs).count})", backlogs]
-            end,
+            available_backlogs.map { |backlogs| ["#{backlogs} Backlogs (#{Course.where(allow_backlogs: backlogs, id: courses.pluck(:id)).count})", backlogs] },
             selected: params[:allow_backlogs]
           ),
           { include_blank: "Backlogs Allowed" },
@@ -149,8 +147,7 @@
         <%= f.label :lateral_entry_possible, "Lateral Entry", class: "form-label" %>
         <%= f.select :lateral_entry_possible,
           options_for_select(
-            [["Yes (#{Course.joins(:course_requirement).where(course_requirements: { lateral_entry_possible: true }).count})", true], 
-             ["No (#{Course.joins(:course_requirement).where(course_requirements: { lateral_entry_possible: false }).count})", false]],
+            available_lateral_entries.map { |entry| ["#{entry ? 'Yes' : 'No'} (#{Course.joins(:course_requirement).where(course_requirements: { lateral_entry_possible: entry }, id: courses.pluck(:id)).count})", entry] },
             selected: params[:lateral_entry_possible]
           ),
           { include_blank: "Lateral Entry" },
