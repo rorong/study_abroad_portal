@@ -2,6 +2,7 @@
 <% query_params = request.query_parameters %>
 <% course_count = @course_count || 0 %>
 <% university_count = @university_count || 0 # Use the count from controller %>
+<% filtered_courses_query = local_assigns[:filtered_courses_query] || @filtered_courses_query %>
 
 <div data-controller="search" data-currency="<%= session[:currency] || 'USD' %>">
   <%# Optimize filter processing by caching the lookups %>

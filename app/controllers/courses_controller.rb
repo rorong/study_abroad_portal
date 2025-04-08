@@ -192,6 +192,10 @@ class CoursesController < ApplicationController
     
     # Calculate filter options from the total filtered results before pagination
     filtered_course_ids = @courses.pluck(:id)
+    
+    # Store the filtered query before pagination for filter counts
+    @filtered_courses_query = @courses
+    
     # Prepare dynamic filter options based on current filtered results
     @available_institutions = Institution.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
     @available_departments = Department.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
@@ -214,6 +218,7 @@ class CoursesController < ApplicationController
     # Ensure per_page is within reasonable limits
     per_page = [per_page, 5, 10, 15, 25, 50, 100].include?(per_page) ? per_page : 15
     
+    # Apply pagination after calculating filter counts
     @courses = @courses.page(params[:page]).per(per_page)
 
     if params[:query].present?
@@ -241,7 +246,8 @@ class CoursesController < ApplicationController
             universities: @available_universities,
             available_backlogs: @available_backlogs,
             available_lateral_entries: @available_lateral_entries,
-            per_page: per_page
+            per_page: per_page,
+            filtered_courses_query: @filtered_courses_query
           }
         )
       }
