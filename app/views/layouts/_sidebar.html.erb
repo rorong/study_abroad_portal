@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #fc034e;">
   <%= link_to 'Study Portal', root_path, class: "navbar-brand" %>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -22,83 +22,23 @@
     <ul class="navbar-nav">
       <li class="nav-item me-3">
         <div class="dropdown">
-          <button class="btn btn-outline-light dropdown-toggle" type="button" id="currencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <button class="btn btn-link nav-link dropdown-toggle" type="button" id="currencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-money-bill-wave"></i>
             <%= session[:currency] || 'USD' %>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="currencyDropdown">
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'USD' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'USD' %>
-              <%= submit_tag 'USD ($)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'USD' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'GBP' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'GBP' %>
-              <%= submit_tag 'GBP (£)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'GBP' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'EUR' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'EUR' %>
-              <%= submit_tag 'EUR (€)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'EUR' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'AED' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'AED' %>
-              <%= submit_tag 'AED (د.إ)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'AED' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'SGD' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'SGD' %>
-              <%= submit_tag 'SGD (S$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'SGD' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'AUD' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'AUD' %>
-              <%= submit_tag 'AUD (A$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'AUD' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'NZD' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'NZD' %>
-              <%= submit_tag 'NZD (NZ$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'NZD' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'JPY' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'JPY' %>
-              <%= submit_tag 'JPY (¥)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'JPY' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'CHF' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'CHF' %>
-              <%= submit_tag 'CHF (Fr)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'CHF' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'THB' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'THB' %>
-              <%= submit_tag 'THB (฿)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'THB' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'MYR' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'MYR' %>
-              <%= submit_tag 'MYR (RM)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'MYR' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'CNY' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'CNY' %>
-              <%= submit_tag 'CNY (¥)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'CNY' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'HKD' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'HKD' %>
-              <%= submit_tag 'HKD (HK$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'HKD' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'CAD' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'CAD' %>
-              <%= submit_tag 'CAD (C$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'CAD' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'INR' ? 'active' : ''}", data: { turbo: false } do %>
-              <%= hidden_field_tag :currency, 'INR' %>
-              <%= submit_tag 'INR (₹)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'INR' ? 'active' : ''}" %>
+          <ul class="dropdown-menu" aria-labelledby="currencyDropdown">
+            <% %w[USD GBP CAD EUR AED SGD AUD NZD JPY CHF THB MYR CNY HKD INR].each do |currency| %>
+              <li>
+                <%= button_to set_currency_path(currency: currency), 
+                    method: :post, 
+                    class: "dropdown-item #{'active' if session[:currency] == currency}",
+                    data: { 
+                      turbo: false,
+                      action: "currency#update"
+                    } do %>
+                  <%= currency %>
+                <% end %>
+              </li>
             <% end %>
           </ul>
         </div>

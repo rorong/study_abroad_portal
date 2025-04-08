@@ -7,9 +7,11 @@ class CurrenciesController < ApplicationController
     
     if valid_currencies.include?(currency)
       session[:currency] = currency
+      # No need to call session.save as Rails handles this automatically
     end
     
     # Redirect back to the previous page with a refresh parameter
-    redirect_to request.referer || root_path, notice: "Currency updated to #{currency}"
+    # Use a full page reload instead of Turbo
+    redirect_to request.referer || root_path, notice: "Currency updated to #{currency}", allow_other_host: false
   end
 end 

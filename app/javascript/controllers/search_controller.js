@@ -20,6 +20,7 @@ export default class SearchController extends Controller {
     
     // Initialize currency from data attribute
     this.currency = this.element.dataset.currency || 'USD';
+    console.log("Initialized currency:", this.currency);
     
     // Initialize exchange rates
     this.exchangeRates = {
@@ -48,6 +49,15 @@ export default class SearchController extends Controller {
     if (this.hasAddressInputTarget) {
       this.initializeGooglePlaces();
     }
+    
+    // Listen for currency changes
+    document.addEventListener('currency:updated', (event) => {
+      if (event.detail && event.detail.currency) {
+        this.currency = event.detail.currency;
+        console.log("Currency updated to:", this.currency);
+        this.initializeSliders();
+      }
+    });
   }
 
   fetchExchangeRates() {

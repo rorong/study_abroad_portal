@@ -3,8 +3,9 @@
 <% course_count = @course_count || 0 %>
 <% university_count = @university_count || 0 # Use the count from controller %>
 <% filtered_courses_query = local_assigns[:filtered_courses_query] || @filtered_courses_query %>
+<% current_currency = session[:currency] || 'USD' %>
 
-<div data-controller="search" data-currency="<%= session[:currency] || 'USD' %>">
+<div data-controller="search" data-currency="<%= current_currency %>">
   <%# Optimize filter processing by caching the lookups %>
   <% selected_filters = {}.tap do |filters|
     if params[:institution_id].present?
@@ -176,13 +177,30 @@
     </h5>
     
     <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center me-3">
+        <%= form_tag courses_path, method: :get, data: { turbo: true } do %>
+          <%# Preserve all existing query parameters except page %>
+          <% query_params.each do |key, value| %>
+            <%= hidden_field_tag key, value unless key == 'per_page' || key == 'page' %>
+          <% end %>
+          
+          <div class="d-flex align-items-center">
+            <label for="per_page" class="form-label mb-0 me-2" style="white-space: nowrap;">Course per page:</label>
+            <%= select_tag :per_page, 
+                options_for_select([5, 10, 15, 25, 50, 100], selected: params[:per_page] || 15),
+                class: "form-select form-select-sm",
+                style: "width: auto;",
+                onchange: "this.form.submit();" %>
+          </div>
+        <% end %>
+      </div>
       <%# Add Map View button if we have universities from search results %>
       <% if courses.any? && @all_university_ids.present? %>
         <%= link_to map_search_universities_path(university_ids: @all_university_ids.join(',')), class: "btn btn-success me-2", data: { turbo: false } do %>
           <i class="fas fa-map-marked-alt me-1"></i> View on Map
         <% end %>
       <% end %>
-      
+
       <%= form_tag courses_path, method: :get, class: "d-flex align-items-center", data: { turbo: true } do %>
         <%# Preserve all existing query parameters %>
         <% query_params.each do |key, value| %>
@@ -204,26 +222,6 @@
             style: "width: auto;",
             data: { action: "change->search#handleSort" } %>
       <% end %>
-    </div>
-  </div>
-  <div class="mt-8 flex justify-center">
-    <div class="d-flex align-items-center">
-      <div class="me-3">
-        <%= form_tag courses_path, method: :get, data: { turbo: true } do %>
-          <%# Preserve all existing query parameters except page %>
-          <% query_params.each do |key, value| %>
-            <%= hidden_field_tag key, value unless key == 'per_page' || key == 'page' %>
-          <% end %>
-          
-          <div class="d-flex align-items-center">
-            <label for="per_page" class="form-label mb-0 me-2">Items per page:</label>
-            <%= select_tag :per_page, 
-                options_for_select([5, 10, 15, 25, 50, 100], selected: params[:per_page] || 15),
-                class: "form-select form-select-sm",
-                onchange: "this.form.submit();" %>
-          </div>
-        <% end %>
-      </div>
     </div>
   </div>
   <% if courses.any? %>
