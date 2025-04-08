@@ -31,6 +31,66 @@
               <%= submit_tag 'USD ($)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'USD' ? 'active' : ''}" %>
             <% end %>
             
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'GBP' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'GBP' %>
+              <%= submit_tag 'GBP (£)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'GBP' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'EUR' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'EUR' %>
+              <%= submit_tag 'EUR (€)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'EUR' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'AED' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'AED' %>
+              <%= submit_tag 'AED (د.إ)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'AED' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'SGD' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'SGD' %>
+              <%= submit_tag 'SGD (S$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'SGD' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'AUD' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'AUD' %>
+              <%= submit_tag 'AUD (A$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'AUD' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'NZD' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'NZD' %>
+              <%= submit_tag 'NZD (NZ$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'NZD' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'JPY' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'JPY' %>
+              <%= submit_tag 'JPY (¥)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'JPY' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'CHF' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'CHF' %>
+              <%= submit_tag 'CHF (Fr)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'CHF' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'THB' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'THB' %>
+              <%= submit_tag 'THB (฿)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'THB' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'MYR' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'MYR' %>
+              <%= submit_tag 'MYR (RM)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'MYR' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'CNY' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'CNY' %>
+              <%= submit_tag 'CNY (¥)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'CNY' ? 'active' : ''}" %>
+            <% end %>
+            
+            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'HKD' ? 'active' : ''}" do %>
+              <%= hidden_field_tag :currency, 'HKD' %>
+              <%= submit_tag 'HKD (HK$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'HKD' ? 'active' : ''}" %>
+            <% end %>
+            
             <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'CAD' ? 'active' : ''}" do %>
               <%= hidden_field_tag :currency, 'CAD' %>
               <%= submit_tag 'CAD (C$)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'CAD' ? 'active' : ''}" %>
@@ -39,11 +99,6 @@
             <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'INR' ? 'active' : ''}" do %>
               <%= hidden_field_tag :currency, 'INR' %>
               <%= submit_tag 'INR (₹)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'INR' ? 'active' : ''}" %>
-            <% end %>
-            
-            <%= form_tag set_currency_path, method: :post, class: "dropdown-item #{session[:currency] == 'GBP' ? 'active' : ''}" do %>
-              <%= hidden_field_tag :currency, 'GBP' %>
-              <%= submit_tag 'GBP (£)', class: "btn btn-link text-decoration-none p-0 border-0 bg-transparent w-100 text-start #{session[:currency] == 'GBP' ? 'active' : ''}" %>
             <% end %>
           </ul>
         </div>

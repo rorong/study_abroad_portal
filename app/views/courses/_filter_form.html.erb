@@ -233,7 +233,26 @@
         <%= f.label :min_tuition_fee, "Tuition Fee", class: "form-label" %>
         <div class="d-flex align-items-center">
           <div class="input-group input-group-sm me-2">
-            <span class="input-group-text"><%= session[:currency] == 'USD' ? '$' : (session[:currency] == 'CAD' ? 'C$' : (session[:currency] == 'INR' ? '₹' : (session[:currency] == 'GBP' ? '£' : '$'))) %></span>
+            <span class="input-group-text">
+              <%= case session[:currency]
+                  when 'USD' then '$'
+                  when 'GBP' then '£'
+                  when 'EUR' then '€'
+                  when 'AED' then 'د.إ'
+                  when 'SGD' then 'S$'
+                  when 'AUD' then 'A$'
+                  when 'NZD' then 'NZ$'
+                  when 'JPY' then '¥'
+                  when 'CHF' then 'Fr'
+                  when 'THB' then '฿'
+                  when 'MYR' then 'RM'
+                  when 'CNY' then '¥'
+                  when 'HKD' then 'HK$'
+                  when 'CAD' then 'C$'
+                  when 'INR' then '₹'
+                  else '$'
+                  end %>
+            </span>
             <%= f.number_field :min_tuition_fee, 
               value: params[:min_tuition_fee],
               placeholder: "Min",
@@ -245,7 +264,26 @@
           </div>
           <span class="mx-2">-</span>
           <div class="input-group input-group-sm">
-            <span class="input-group-text"><%= session[:currency] == 'USD' ? '$' : (session[:currency] == 'CAD' ? 'C$' : (session[:currency] == 'INR' ? '₹' : (session[:currency] == 'GBP' ? '£' : '$'))) %></span>
+            <span class="input-group-text">
+              <%= case session[:currency]
+                  when 'USD' then '$'
+                  when 'GBP' then '£'
+                  when 'EUR' then '€'
+                  when 'AED' then 'د.إ'
+                  when 'SGD' then 'S$'
+                  when 'AUD' then 'A$'
+                  when 'NZD' then 'NZ$'
+                  when 'JPY' then '¥'
+                  when 'CHF' then 'Fr'
+                  when 'THB' then '฿'
+                  when 'MYR' then 'RM'
+                  when 'CNY' then '¥'
+                  when 'HKD' then 'HK$'
+                  when 'CAD' then 'C$'
+                  when 'INR' then '₹'
+                  else '$'
+                  end %>
+            </span>
             <%= f.number_field :max_tuition_fee, 
               value: params[:max_tuition_fee],
               placeholder: "Max",
@@ -431,7 +469,26 @@
         <%= f.label :application_fee, "Application Fee", class: "form-label" %>
         <div class="d-flex align-items-center">
           <div class="input-group input-group-sm me-2">
-            <span class="input-group-text"><%= session[:currency] == 'USD' ? '$' : (session[:currency] == 'CAD' ? 'C$' : (session[:currency] == 'INR' ? '₹' : (session[:currency] == 'GBP' ? '£' : '$'))) %></span>
+            <span class="input-group-text">
+              <%= case session[:currency]
+                  when 'USD' then '$'
+                  when 'GBP' then '£'
+                  when 'EUR' then '€'
+                  when 'AED' then 'د.إ'
+                  when 'SGD' then 'S$'
+                  when 'AUD' then 'A$'
+                  when 'NZD' then 'NZ$'
+                  when 'JPY' then '¥'
+                  when 'CHF' then 'Fr'
+                  when 'THB' then '฿'
+                  when 'MYR' then 'RM'
+                  when 'CNY' then '¥'
+                  when 'HKD' then 'HK$'
+                  when 'CAD' then 'C$'
+                  when 'INR' then '₹'
+                  else '$'
+                  end %>
+            </span>
             <%= f.number_field :min_application_fee, 
               value: params[:min_application_fee],
               placeholder: "Min",
@@ -443,7 +500,26 @@
           </div>
           <span class="mx-2">-</span>
           <div class="input-group input-group-sm">
-            <span class="input-group-text"><%= session[:currency] == 'USD' ? '$' : (session[:currency] == 'CAD' ? 'C$' : (session[:currency] == 'INR' ? '₹' : (session[:currency] == 'GBP' ? '£' : '$'))) %></span>
+            <span class="input-group-text">
+              <%= case session[:currency]
+                  when 'USD' then '$'
+                  when 'GBP' then '£'
+                  when 'EUR' then '€'
+                  when 'AED' then 'د.إ'
+                  when 'SGD' then 'S$'
+                  when 'AUD' then 'A$'
+                  when 'NZD' then 'NZ$'
+                  when 'JPY' then '¥'
+                  when 'CHF' then 'Fr'
+                  when 'THB' then '฿'
+                  when 'MYR' then 'RM'
+                  when 'CNY' then '¥'
+                  when 'HKD' then 'HK$'
+                  when 'CAD' then 'C$'
+                  when 'INR' then '₹'
+                  else '$'
+                  end %>
+            </span>
             <%= f.number_field :max_application_fee, 
               value: params[:max_application_fee],
               placeholder: "Max",

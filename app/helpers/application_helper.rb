@@ -67,9 +67,20 @@ module ApplicationHelper
           # Extract the rates we need
           exchange_rates = {
             'USD' => 1.0,
+            'GBP' => rates['GBP'],
             'CAD' => rates['CAD'],
-            'INR' => rates['INR'],
-            'GBP' => rates['GBP']
+            'EUR' => rates['EUR'],
+            'AED' => rates['AED'],
+            'SGD' => rates['SGD'],
+            'AUD' => rates['AUD'],
+            'NZD' => rates['NZD'],
+            'JPY' => rates['JPY'],
+            'CHF' => rates['CHF'],
+            'THB' => rates['THB'],
+            'MYR' => rates['MYR'],
+            'CNY' => rates['CNY'],
+            'HKD' => rates['HKD'],
+            'INR' => rates['INR']
           }
           # Cache the rates for 24 hours
           Rails.cache.write('exchange_rates', exchange_rates, expires_in: 24.hours)
@@ -81,9 +92,20 @@ module ApplicationHelper
       # Fallback to hardcoded rates if API fails
       {
         'USD' => 1.0,
+        'GBP' => 0.79,
         'CAD' => 1.37,
-        'INR' => 83.12,
-        'GBP' => 0.79
+        'EUR' => 0.92,
+        'AED' => 3.67,
+        'SGD' => 1.35,
+        'AUD' => 1.54,
+        'NZD' => 1.66,
+        'JPY' => 151.50,
+        'CHF' => 0.90,
+        'THB' => 36.31,
+        'MYR' => 4.77,
+        'CNY' => 7.23,
+        'HKD' => 7.82,
+        'INR' => 85.12
       }
     end
     
@@ -93,12 +115,34 @@ module ApplicationHelper
       case currency
       when 'USD'
         "$#{number_with_delimiter(amount)}"
-      when 'CAD'
-        "C$#{number_with_delimiter(amount)}"
-      when 'INR'
-        "₹#{number_with_delimiter(amount)}"
       when 'GBP'
         "£#{number_with_delimiter(amount)}"
+      when 'CAD'
+        "C$#{number_with_delimiter(amount)}"
+      when 'EUR'
+        "€#{number_with_delimiter(amount)}"
+      when 'AED'
+        "د.إ#{number_with_delimiter(amount)}"
+      when 'SGD'
+        "S$#{number_with_delimiter(amount)}"
+      when 'AUD'
+        "A$#{number_with_delimiter(amount)}"
+      when 'NZD'
+        "NZ$#{number_with_delimiter(amount)}"
+      when 'JPY'
+        "¥#{number_with_delimiter(amount)}"
+      when 'CHF'
+        "Fr#{number_with_delimiter(amount)}"
+      when 'THB'
+        "฿#{number_with_delimiter(amount)}"
+      when 'MYR'
+        "RM#{number_with_delimiter(amount)}"
+      when 'CNY'
+        "¥#{number_with_delimiter(amount)}"
+      when 'HKD'
+        "HK$#{number_with_delimiter(amount)}"
+      when 'INR'
+        "₹#{number_with_delimiter(amount)}"
       else
         "$#{number_with_delimiter(amount)}"
       end

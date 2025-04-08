@@ -2,8 +2,10 @@ class CurrenciesController < ApplicationController
   def set_currency
     currency = params[:currency]
     
-    # Validate currency
-    if ['USD', 'CAD', 'INR', 'GBP'].include?(currency)
+    # Validate currency against the full list
+    valid_currencies = ['USD', 'GBP', 'CAD', 'EUR', 'AED', 'SGD', 'AUD', 'NZD', 'JPY', 'CHF', 'THB', 'MYR', 'CNY', 'HKD', 'INR']
+    
+    if valid_currencies.include?(currency)
       session[:currency] = currency
     end
     
