@@ -240,6 +240,10 @@ class CoursesController < ApplicationController
     else
       @courses_by_university = @courses.joins(:universities).group_by { |course| course.universities.first }.reject { |_, courses| courses.empty? }
     end
+    
+    # Set the current currency for the view
+    @current_currency = session[:currency] || 'USD'
+    
     respond_to do |format|
       format.html
       format.turbo_stream { 

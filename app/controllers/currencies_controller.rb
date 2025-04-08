@@ -7,6 +7,10 @@ class CurrenciesController < ApplicationController
     
     if valid_currencies.include?(currency)
       session[:currency] = currency
+      # Clear any cached exchange rates to force a refresh
+      Rails.cache.delete('exchange_rates')
+      # Clear any cached course currency displays
+      Rails.cache.delete_matched("views/courses/*")
       # No need to call session.save as Rails handles this automatically
     end
     

@@ -3,9 +3,12 @@
 <% course_count = @course_count || 0 %>
 <% university_count = @university_count || 0 # Use the count from controller %>
 <% filtered_courses_query = local_assigns[:filtered_courses_query] || @filtered_courses_query %>
-<% current_currency = session[:currency] || 'USD' %>
+<% current_currency = @current_currency || session[:currency] || 'USD' %>
 
-<div data-controller="search" data-currency="<%= current_currency %>">
+<div data-controller="search currency" 
+     data-currency="<%= current_currency %>" 
+     data-search-currency-value="<%= current_currency %>"
+     data-action="currency:updated->currency#updateCurrencyDisplay">
   <%# Optimize filter processing by caching the lookups %>
   <% selected_filters = {}.tap do |filters|
     if params[:institution_id].present?
@@ -254,9 +257,12 @@
                         <div class="col-md-4">
                           <div class="mb-3">
                             <div class="text-muted mb-1">Tuition Fee</div>
-                            <div class="fw-bold">
+                            <div class="fw-bold" data-currency-target="tuitionFee">
                               <% if course.tuition_fee_international.present? %>
-                                <%= format_currency(convert_currency(course.tuition_fee_international)) %>
+                                <%# Disable caching for currency conversion %>
+                                <% cache [course, 'tuition_fee', session[:currency]] do %>
+                                  <%= format_currency(convert_currency(course.tuition_fee_international, 'USD', session[:currency])) %>
+                                <% end %>
                               <% else %>
                                 N/A
                               <% end %>
@@ -267,9 +273,12 @@
                         <div class="col-md-4">
                           <div class="mb-3">
                             <div class="text-muted mb-1">Application Fee</div>
-                            <div class="fw-bold">
+                            <div class="fw-bold" data-currency-target="applicationFee">
                               <% if course.application_fee.present? %>
-                                <%= format_currency(convert_currency(course.application_fee)) %>
+                                <%# Disable caching for currency conversion %>
+                                <% cache [course, 'application_fee', session[:currency]] do %>
+                                  <%= format_currency(convert_currency(course.application_fee, 'USD', session[:currency])) %>
+                                <% end %>
                               <% else %>
                                 N/A
                               <% end %>

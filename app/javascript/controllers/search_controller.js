@@ -12,14 +12,18 @@ export default class SearchController extends Controller {
                     "addressInput", "latitude", "longitude", "addressError",
                     "distance", "distanceSlider", "perPage"];
 
+  static values = {
+    currency: String
+  }
+
   connect() {
     console.log("Search controller connected!");
     this.timeout = null;
     this.searchTimeout = null;
     this.autocomplete = null;
     
-    // Initialize currency from data attribute
-    this.currency = this.element.dataset.currency || 'USD';
+    // Initialize currency from data attribute or value
+    this.currency = this.currencyValue || this.element.dataset.currency || 'USD';
     console.log("Initialized currency:", this.currency);
     
     // Initialize exchange rates
@@ -55,7 +59,11 @@ export default class SearchController extends Controller {
       if (event.detail && event.detail.currency) {
         this.currency = event.detail.currency;
         console.log("Currency updated to:", this.currency);
+        this.currencyValue = this.currency;
         this.initializeSliders();
+        
+        // Force a page reload to ensure all currency displays are updated
+        window.location.reload();
       }
     });
   }

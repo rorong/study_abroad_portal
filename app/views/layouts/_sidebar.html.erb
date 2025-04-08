@@ -21,7 +21,7 @@
     </ul>
     <ul class="navbar-nav">
       <li class="nav-item me-3">
-        <div class="dropdown">
+        <div class="dropdown" data-controller="currency">
           <button class="btn btn-link nav-link dropdown-toggle" type="button" id="currencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="fas fa-money-bill-wave"></i>
             <%= session[:currency] || 'USD' %>
@@ -29,14 +29,11 @@
           <ul class="dropdown-menu" aria-labelledby="currencyDropdown">
             <% %w[USD GBP CAD EUR AED SGD AUD NZD JPY CHF THB MYR CNY HKD INR].each do |currency| %>
               <li>
-                <%= button_to set_currency_path(currency: currency), 
-                    method: :post, 
-                    class: "dropdown-item #{'active' if session[:currency] == currency}",
-                    data: { 
-                      turbo: false,
-                      action: "currency#update"
-                    } do %>
-                  <%= currency %>
+                <%= form_tag set_currency_path, method: :post, data: { turbo: false } do %>
+                  <%= hidden_field_tag :currency, currency %>
+                  <%= button_tag currency, 
+                      class: "dropdown-item #{'active' if session[:currency] == currency}",
+                      data: { action: "currency#update" } %>
                 <% end %>
               </li>
             <% end %>

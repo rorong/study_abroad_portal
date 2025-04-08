@@ -3,7 +3,7 @@
       controller: "search",
       turbo_frame: "courses_list",
       search_target: "form",
-      currency: session[:currency] || 'USD'
+      currency: @current_currency || session[:currency] || 'USD'
     }, 
     class: "mb-4" do |f| %>
     <div class="row g-3">
