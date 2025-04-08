@@ -205,7 +205,26 @@
       <% end %>
     </div>
   </div>
-
+  <div class="mt-8 flex justify-center">
+    <div class="d-flex align-items-center">
+      <div class="me-3">
+        <%= form_tag courses_path, method: :get, data: { turbo: true } do %>
+          <%# Preserve all existing query parameters %>
+          <% query_params.each do |key, value| %>
+            <%= hidden_field_tag key, value unless key == 'per_page' %>
+          <% end %>
+          
+          <div class="d-flex align-items-center">
+            <label for="per_page" class="form-label mb-0 me-2">Items per page:</label>
+            <%= select_tag :per_page, 
+                options_for_select([5, 10, 15, 25, 50, 100], selected: params[:per_page] || 15),
+                class: "form-select form-select-sm",
+                onchange: "this.form.submit();" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
   <% if courses.any? %>
     <% courses_by_university.each do |university, university_courses| %>
       <% if university.present? %>
@@ -313,8 +332,7 @@
     <p class="text-muted text-center">No courses found.</p>
   <% end %>
 
-  <%# Add pagination controls %>
-  <div class="mt-8 flex justify-center">
-    <%= paginate @courses, class: "pagination" %>
-  </div>
+
+      <%= paginate @courses, class: "pagination", params: query_params %>
+   
 </div>

@@ -10,7 +10,7 @@ export default class SearchController extends Controller {
                     "minNationalRanking", "maxNationalRanking", "nationalRankingSlider",
                     "minTuitionFee", "maxTuitionFee", "tuitionFeeSlider",
                     "addressInput", "latitude", "longitude", "addressError",
-                    "distance", "distanceSlider"];
+                    "distance", "distanceSlider", "perPage"];
 
   connect() {
     console.log("Search controller connected!");
@@ -671,6 +671,19 @@ export default class SearchController extends Controller {
       // Submit the form with the unique parameters
       const url = form.action + '?' + uniqueParams.toString();
       window.location.href = url;
+    }
+  }
+
+  updatePerPage(event) {
+    // Get the selected per_page value
+    const perPage = this.perPageTarget.value;
+    
+    // Find the closest form element
+    const form = event.target.closest('form');
+    
+    if (form) {
+      // Submit the form directly
+      form.submit();
     }
   }
 

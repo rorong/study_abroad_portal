@@ -208,7 +208,13 @@ class CoursesController < ApplicationController
     @available_lateral_entries = Course.joins(:course_requirement).where(id: filtered_course_ids).distinct.pluck('course_requirements.lateral_entry_possible').compact
     @available_tags = Tag.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
     @available_education_boards = EducationBoard.joins(:courses).where(courses: { id: filtered_course_ids }).distinct
-    @courses = @courses.page(params[:page]).per(15)
+    
+    # Get per_page parameter from request or use default
+    per_page = params[:per_page].present? ? params[:per_page].to_i : 15
+    # Ensure per_page is within reasonable limits
+    per_page = [per_page, 5, 10, 15, 25, 50, 100].include?(per_page) ? per_page : 15
+    
+    @courses = @courses.page(params[:page]).per(per_page)
 
     if params[:query].present?
       filtered_course_ids = @courses.pluck(:id)
@@ -234,7 +240,8 @@ class CoursesController < ApplicationController
             tags: @available_tags,
             universities: @available_universities,
             available_backlogs: @available_backlogs,
-            available_lateral_entries: @available_lateral_entries
+            available_lateral_entries: @available_lateral_entries,
+            per_page: per_page
           }
         )
       }
