@@ -218,6 +218,17 @@ class CoursesController < ApplicationController
     # Ensure per_page is within reasonable limits
     per_page = [per_page, 5, 10, 15, 25, 50, 100].include?(per_page) ? per_page : 15
     
+    # Calculate total pages before pagination
+    total_pages = (@courses.count.to_f / per_page).ceil
+    
+    # If the requested page is greater than the total pages, redirect to the first page
+    if params[:page].present? && params[:page].to_i > total_pages && total_pages > 0
+      # Preserve all parameters except page
+      redirect_params = params.to_unsafe_h.except(:controller, :action, :page)
+      redirect_params[:per_page] = per_page
+      return redirect_to courses_path(redirect_params)
+    end
+    
     # Apply pagination after calculating filter counts
     @courses = @courses.page(params[:page]).per(per_page)
 

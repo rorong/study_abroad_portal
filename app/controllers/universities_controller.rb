@@ -6,7 +6,7 @@ class UniversitiesController < ApplicationController
     authorize @university
     @courses = @university.courses.includes(:department, :institution, :tags, :education_board)
                         .page(params[:page])
-                        .per(20)
+                        .per(6)
   end
 
   def map_search
