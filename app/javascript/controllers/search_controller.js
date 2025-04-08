@@ -82,9 +82,8 @@ export default class SearchController extends Controller {
       const slider = this.tuitionFeeSliderTarget;
       const maxInput = this.maxTuitionFeeTarget;
       
-      // Set initial value if not already set
-      if (!maxInput.value) {
-        maxInput.value = this.convertCurrency(100000, 'USD', this.currency);
+      // Only set the slider value if the input already has a value
+      if (maxInput.value) {
         slider.value = maxInput.value;
       }
     }
@@ -94,9 +93,8 @@ export default class SearchController extends Controller {
       const slider = this.applicationFeeSliderTarget;
       const maxInput = this.maxApplicationFeeTarget;
       
-      // Set initial value if not already set
-      if (!maxInput.value) {
-        maxInput.value = this.convertCurrency(500, 'USD', this.currency);
+      // Only set the slider value if the input already has a value
+      if (maxInput.value) {
         slider.value = maxInput.value;
       }
     }
@@ -229,11 +227,8 @@ export default class SearchController extends Controller {
     const slider = this.distanceSliderTarget;
     const input = this.distanceTarget;
 
-    // Set initial value if not already set
-    if (!input.value) {
-      input.value = 50;
-      slider.value = 50;
-    } else {
+    // Only set the slider value if the input already has a value
+    if (input.value) {
       slider.value = input.value;
     }
   }
@@ -365,15 +360,7 @@ export default class SearchController extends Controller {
       minInput.value = maxInput.value;
     }
 
-    // Set the application fee range parameter
-    const params = new URLSearchParams(window.location.search);
-    params.set('application_fee_range', `${minInput.value}-${maxInput.value}`);
-    
-    // Update URL without reloading the page
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.pushState({}, '', newUrl);
-
-    // Trigger search
+    // Trigger search with explicit flag
     this.search(event);
   }
 
@@ -458,7 +445,7 @@ export default class SearchController extends Controller {
       minInput.value = maxInput.value;
     }
 
-    // Trigger search
+    // Trigger search with explicit flag
     this.search(event);
   }
 
@@ -469,24 +456,8 @@ export default class SearchController extends Controller {
     // Update distance input with slider value
     input.value = slider.value;
     
-    // Get the form element
-    const form = this.element;
-    
-    // Create a FormData object from the form
-    const formData = new FormData(form);
-    
-    // Create a URLSearchParams object
-    const params = new URLSearchParams();
-    
-    // Add all form data to the params
-    for (const [key, value] of formData.entries()) {
-      if (value) {
-        params.append(key, value);
-      }
-    }
-    
-    // Submit the form with Turbo
-    Turbo.visit(form.action + '?' + params.toString(), { action: "replace" });
+    // Trigger search with explicit flag
+    this.search(event);
   }
 
   search(event) {
@@ -513,9 +484,38 @@ export default class SearchController extends Controller {
         // Create a new URLSearchParams object
         const newParams = new URLSearchParams();
         
+        // Track if we're explicitly setting tuition or application fee
+        let explicitlySettingTuitionFee = false;
+        let explicitlySettingApplicationFee = false;
+        
+        // Check if the event target is related to tuition or application fee
+        if (event.target && (
+            event.target.matches('[data-search-target="minTuitionFee"]') || 
+            event.target.matches('[data-search-target="maxTuitionFee"]') ||
+            event.target.matches('[data-search-target="tuitionFeeSlider"]'))) {
+          explicitlySettingTuitionFee = true;
+        }
+        
+        if (event.target && (
+            event.target.matches('[data-search-target="minApplicationFee"]') || 
+            event.target.matches('[data-search-target="maxApplicationFee"]') ||
+            event.target.matches('[data-search-target="applicationFeeSlider"]'))) {
+          explicitlySettingApplicationFee = true;
+        }
+        
         // Add all form data to the new params
         for (const [key, value] of formData.entries()) {
           if (value) {
+            // Only include tuition fee parameters if explicitly set
+            if ((key === 'min_tuition_fee' || key === 'max_tuition_fee') && !explicitlySettingTuitionFee) {
+              continue;
+            }
+            
+            // Only include application fee parameters if explicitly set
+            if ((key === 'min_application_fee' || key === 'max_application_fee') && !explicitlySettingApplicationFee) {
+              continue;
+            }
+            
             newParams.append(key, value);
           }
         }
