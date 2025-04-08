@@ -46,6 +46,13 @@ module ApplicationHelper
       return amount if from_currency == to_currency
       # Try to get exchange rates from cache or API
       exchange_rates = fetch_exchange_rates
+      
+      # Check if exchange rates are valid
+      if exchange_rates[from_currency].nil? || exchange_rates[to_currency].nil?
+        Rails.logger.warn("Missing exchange rate for #{from_currency} or #{to_currency}")
+        return amount # Return original amount if exchange rates are missing
+      end
+      
       # Convert to USD first if not already in USD
       usd_amount = from_currency == 'USD' ? amount : amount / exchange_rates[from_currency]
       # Then convert to target currency
