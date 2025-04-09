@@ -521,7 +521,33 @@ export default class SearchController extends Controller {
           explicitlySettingApplicationFee = true;
         }
         
-        // Add all form data to the new params
+        // First, add all existing URL parameters to preserve them
+        for (const [key, value] of urlParams.entries()) {
+          // Skip parameters that will be explicitly set by the form
+          if (formData.has(key)) {
+            continue;
+          }
+          
+          // Skip tuition fee parameters if we're explicitly setting them
+          if ((key === 'min_tuition_fee' || key === 'max_tuition_fee') && explicitlySettingTuitionFee) {
+            continue;
+          }
+          
+          // Skip application fee parameters if we're explicitly setting them
+          if ((key === 'min_application_fee' || key === 'max_application_fee') && explicitlySettingApplicationFee) {
+            continue;
+          }
+          
+          // Always preserve the query parameter
+          if (key === 'query') {
+            newParams.append(key, value);
+            continue;
+          }
+          
+          newParams.append(key, value);
+        }
+        
+        // Then add all form data to the new params
         for (const [key, value] of formData.entries()) {
           if (value) {
             // Only include tuition fee parameters if explicitly set
@@ -534,17 +560,8 @@ export default class SearchController extends Controller {
               continue;
             }
             
-            newParams.append(key, value);
+            newParams.set(key, value);
           }
-        }
-        
-        // Preserve latitude, longitude, and distance if they exist in the current URL
-        if (urlParams.has('latitude') && !newParams.has('latitude')) {
-          newParams.append('latitude', urlParams.get('latitude'));
-        }
-        
-        if (urlParams.has('longitude') && !newParams.has('longitude')) {
-          newParams.append('longitude', urlParams.get('longitude'));
         }
         
         // Always include the distance value from the input field
@@ -552,6 +569,11 @@ export default class SearchController extends Controller {
           newParams.set('distance', this.distanceTarget.value);
         } else if (urlParams.has('distance') && !newParams.has('distance')) {
           newParams.append('distance', urlParams.get('distance'));
+        }
+        
+        // Ensure query parameter is preserved
+        if (urlParams.has('query') && !newParams.has('query')) {
+          newParams.append('query', urlParams.get('query'));
         }
         
         // Submit the form with the preserved parameters
@@ -622,7 +644,33 @@ export default class SearchController extends Controller {
     // Submit the form with the selected course
     const form = this.element;
     if (form) {
-      Turbo.visit(form.action + '?' + new URLSearchParams(new FormData(form)), { action: "replace" });
+      // Get current URL parameters to preserve values
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Create a new FormData object from the form
+      const formData = new FormData(form);
+      
+      // Create a new URLSearchParams object
+      const newParams = new URLSearchParams();
+      
+      // First, add all existing URL parameters to preserve them
+      for (const [key, value] of urlParams.entries()) {
+        // Skip parameters that will be explicitly set by the form
+        if (formData.has(key)) {
+          continue;
+        }
+        newParams.append(key, value);
+      }
+      
+      // Then add all form data to the new params
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          newParams.set(key, value);
+        }
+      }
+      
+      // Submit the form with the preserved parameters
+      Turbo.visit(form.action + '?' + newParams.toString(), { action: "replace" });
     }
   }
 
@@ -632,8 +680,34 @@ export default class SearchController extends Controller {
     if (query.length > 0) {
       // Find the closest form element
       const form = this.element;
-      // Submit the form with the search query
-      Turbo.visit(form.action + '?' + new URLSearchParams(new FormData(form)), { action: "replace" });
+      
+      // Get current URL parameters to preserve values
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Create a new FormData object from the form
+      const formData = new FormData(form);
+      
+      // Create a new URLSearchParams object
+      const newParams = new URLSearchParams();
+      
+      // First, add all existing URL parameters to preserve them
+      for (const [key, value] of urlParams.entries()) {
+        // Skip parameters that will be explicitly set by the form
+        if (formData.has(key)) {
+          continue;
+        }
+        newParams.append(key, value);
+      }
+      
+      // Then add all form data to the new params
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          newParams.set(key, value);
+        }
+      }
+      
+      // Submit the form with the preserved parameters
+      Turbo.visit(form.action + '?' + newParams.toString(), { action: "replace" });
     }
   }
 
@@ -673,22 +747,25 @@ export default class SearchController extends Controller {
       // Get all current URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       
-      // Create a new URLSearchParams object to store unique parameters
-      const uniqueParams = new URLSearchParams();
+      // Create a new URLSearchParams object
+      const newParams = new URLSearchParams();
       
-      // Add all URL parameters to uniqueParams, ensuring no duplicates
+      // First, add all existing URL parameters to preserve them
       for (const [key, value] of urlParams.entries()) {
-        if (!uniqueParams.has(key)) {
-          uniqueParams.append(key, value);
+        // Skip the sort parameter as we'll set it explicitly
+        if (key === 'sort') {
+          continue;
         }
+        newParams.append(key, value);
       }
       
-      // Update the sort parameter
-      uniqueParams.set('sort', formData.get('sort'));
+      // Then add the sort parameter from the form
+      if (formData.has('sort')) {
+        newParams.set('sort', formData.get('sort'));
+      }
       
-      // Submit the form with the unique parameters
-      const url = form.action + '?' + uniqueParams.toString();
-      window.location.href = url;
+      // Submit the form with the preserved parameters
+      Turbo.visit(form.action + '?' + newParams.toString(), { action: "replace" });
     }
   }
 
@@ -700,8 +777,26 @@ export default class SearchController extends Controller {
     const form = event.target.closest('form');
     
     if (form) {
-      // Submit the form directly
-      form.submit();
+      // Get current URL parameters to preserve values
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Create a new URLSearchParams object
+      const newParams = new URLSearchParams();
+      
+      // First, add all existing URL parameters to preserve them
+      for (const [key, value] of urlParams.entries()) {
+        // Skip the per_page parameter as we'll set it explicitly
+        if (key === 'per_page') {
+          continue;
+        }
+        newParams.append(key, value);
+      }
+      
+      // Then add the per_page parameter
+      newParams.set('per_page', perPage);
+      
+      // Submit the form with the preserved parameters
+      Turbo.visit(form.action + '?' + newParams.toString(), { action: "replace" });
     }
   }
 
